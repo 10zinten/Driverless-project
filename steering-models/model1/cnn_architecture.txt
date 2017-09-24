@@ -1,0 +1,46 @@
+CNN Model1 Architecture:
+
+Input: [128 x 128 x 3]
+
+ConV Layer 1
+    filter  : 32 of [3 x 3 x 3]
+    bias    : [32]
+    stride  : 1
+    padding : 1
+    output  : [128 x 128 x 32]
+
+Max Pooling 1
+    filter  : [2 x 2]
+    stride  : 2
+    output  : [64 x 64 x 32]
+
+ConV Layer 2
+    filter  : 64 of [3 x 3 x 32]
+    bias    : [64]
+    stride  : 1
+    padding : 1
+    output  : [64 x 64 x 64]
+
+Max Pooling 2
+    filter  : [2 x 2]
+    stride  : 2
+    output  : [32 x 32 x 64]
+
+ConV Layer 3
+    filter  : 128 of [3 x 3 x 64]
+    stride  : 1
+    padding : 1
+    output  : [32 x 32 x 128]
+
+Max Pooling 3
+    filter  : [2 x 2]
+    stride  : 2
+    output  : [16 x 16 x 128]
+
+FC Layer 1
+    weight  : [1024 x 100]
+    bias    : [100]
+
+Output Layer
+    weight  : [100 x 1]
+    bais    : [1]
