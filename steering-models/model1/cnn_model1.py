@@ -42,3 +42,17 @@ def new_conv_layer(input,
     layer = tf.nn.relu(layer)
 
     return layer
+
+
+# Helper function to create FC layer
+def new_fc_layer(input, num_input, num_output, use_relu=True):
+
+    weights = weight_variable(shape=[num_input, num_output])
+    biases = bias_variable(shape=num_output)
+
+    layer = tf.matmul(input, weights) + biases
+
+    if use_relu:
+        layer = tf.nn.relu(layer)
+
+    return layer
