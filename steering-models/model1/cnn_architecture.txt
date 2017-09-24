@@ -41,6 +41,10 @@ FC Layer 1
     weight  : [1024 x 100]
     bias    : [100]
 
+FC Layer 2
+    weights : [100 x 50]
+    bias    : [50]
+
 Output Layer
-    weight  : [100 x 1]
+    weight  : [50 x 1]
     bais    : [1]
