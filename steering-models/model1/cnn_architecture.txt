@@ -38,13 +38,19 @@ Max Pooling 3
     output  : [16 x 16 x 128]
 
 FC Layer 1
+    input   : [1024]
     weight  : [1024 x 100]
     bias    : [100]
+    output  : [100]
 
 FC Layer 2
+    input   : [100]
     weights : [100 x 50]
     bias    : [50]
+    output  : [50]
 
 Output Layer
+    input   : [50]
     weight  : [50 x 1]
     bais    : [1]
+    output  : [1] -----> Steering Angle ;)
