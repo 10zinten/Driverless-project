@@ -130,3 +130,20 @@ cost = tf.reduce_mean(cross_entropy)
 
 # Optimization
 optimizer = tf.train.AdadeltaOptimizer(learning_rate=1e-4).minimize(cost)
+
+# Tranning step
+batch_size = 64
+num_batch = 1000
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    epoch_cost = 0
+    costs = []
+    for epoch in range(10000):
+        for i in range(num_batch):
+            batch_x, batch_y = None
+            _, cost = sess.run([optimizer, cost], feed_dict={x: batch_x, y: batch_y})
+            epoch_cost += cost / batch_size
+            if epoch % 1000 == 0:
+                print("Cost after epoch {}: {}".format(epoch, epoch_cost))
+            if epoch % 100 == 0:
+                costs.append(epoch_cost)
