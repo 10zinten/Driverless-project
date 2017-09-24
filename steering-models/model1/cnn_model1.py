@@ -15,11 +15,30 @@ def bias_variable(shape):
     return tf.Variable(initial)
 
 
-def conv2d(x, W, stride):
-    return tf.nn.con2d(x, W, strides=[1, stride, stride, 1], padding='SAME')
+def new_conv_layer(input,
+                   num_input_channels,
+                   filter_size,
+                   num_filters,
+                   use_pooling=True):
 
+    # Create weights and baises
+    shape = [filter_size, filter_size, num_input_channels, num_filters]
+    weights = weight_variable(shape=shape)
+    biases = bias_variable(shape=num_filters)
 
-def max_pooling_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-                          strides=[1, 2, 2, 1],
-                          padding='SAME')
+    layer = tf.nn.conv2d(input,
+                         filter=weights,
+                         strides=[1, 1, 1, 1],
+                         padding='SAME')
+
+    layer += biases
+
+    if use_pooling:
+        layer = tf.nn.max_pool(value=layer,
+                               ksize=[1, 2, 2, 1],
+                               strides=[1, 2, 2, 1],
+                               padding='SAME')
+
+    layer = tf.nn.relu(layer)
+
+    return layer
