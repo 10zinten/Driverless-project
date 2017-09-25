@@ -45,7 +45,6 @@ class ConvModel1(object):
         self.b_conv2 = bias_variable([128])
         self.h_conv2 = max_pool2x2(tf.nn.relu(conv2d(self.h_conv1, self.W_conv2, 1) + self.b_conv2))
 
-
         # Fully Connect layer 1
         self.W_fc1 = weight_variable([16*16*128, 1024])
         self.b_fc1 = bias_variable([1024])
