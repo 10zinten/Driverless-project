@@ -41,9 +41,9 @@ class ConvModel1(object):
     '''
 
     def __init__(self, is_training=True):
-        x = tf.placeholder(tf.float32, shape=[None, 128*128*3], name='x')
+        x = tf.placeholder(tf.float32, shape=[None, 128, 128, 3], name='x')
         y_ = tf.placeholder(tf.float32, shape=[None, 1])
-        x_image = tf.reshape(x, [-1, 128, 128, 3])
+        x_image = x
 
         # Conv layer 1
         self.W_conv1 = weight_variable([3, 3, 1, 32])
