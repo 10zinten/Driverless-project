@@ -6,7 +6,8 @@ import tensorflow as tf
 
 
 def weight_variable(shape):
-    initial = tf.truncated_normal(shape=shape, stddev=0.1)
+    initializer = tf.contrib.layers.xavier_initializer_conv2d()
+    initial = initializer(shape=shape)
     return tf.Variable(initial)
 
 
