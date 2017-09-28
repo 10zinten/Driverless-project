@@ -25,6 +25,20 @@ def max_pool2x2(x):
 
 
 class ConvModel1(object):
+    '''ConvModel1 has 3 Convolutional layers and 1 Fully connected layers.
+
+       Input size        : 128 x 128 x 3
+       Filter 1 size     : 3 x 3 x 32
+       Conv layer 1 size : 128 x 128 x 32
+       Pool layer 1 size : 64 x 64 x 32
+       Filter 2 size     : 3 x 3 x 64
+       Conv layer 2 size : 64 x 64 x 64
+       Pool layer 2 size : 32 x 32 x 64
+       Filter 3 size     : 3 x 3 x 128
+       Conv layer 3 size : 32 x 32 x 128
+       FC layer 1 size   : 1 x 1 x 1024
+    '''
+
     def __init__(self, is_training=True):
         x = tf.placeholder(tf.float32, shape=[None, 128*128*3], name='x')
         y_ = tf.placeholder(tf.float32, shape=[None, 1])
