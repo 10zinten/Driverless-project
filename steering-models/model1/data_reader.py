@@ -16,3 +16,13 @@ class DataReader(object):
         while last_index <= len(self.train_set) + size:
             yield self.train_set[first_index: last_index, :, :, :]
             first_index, last_index = last_index, last_index + size
+
+    def cv_set(self):
+        cv_set = np.load(CV_DIR)
+        # Loading angle from cv.csv file
+        return cv_set   # [cv_set, csv]
+
+    def test_set(self):
+        test_set = np.load(TEST_DIR)
+        # loading angle from test.csv file
+        return test_set  # [test_set, csv]
