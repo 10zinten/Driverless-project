@@ -11,9 +11,9 @@ from scipy.misc import imread, imresize
 
 IMAGES_DIR = 'images/'
 OUTPUT_DIR = 'data/'
-TRAIN_DIR = 'data/train/'
-CV_DIR = 'data/cross_validation/'
-TEST_DIR = 'data/test/'
+TRAIN_DIR = 'data/train/train_set.npy'
+CV_DIR = 'data/cross_validation/cv_set.py'
+TEST_DIR = 'data/test/test_set.npy'
 
 IMAGE_SIZE = (128, 128, 3)
 TRAINING_SIZE = 0.98
