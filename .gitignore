@@ -1,2 +1,6 @@
 *.pyc
 .rope*
+data/*
+test/*
+*/data*
+*/test/*
