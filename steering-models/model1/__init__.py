@@ -1,1 +1,1 @@
-from .cnn_model1 import  ConvModel1
+from cnn_model1 import  ConvModel1
