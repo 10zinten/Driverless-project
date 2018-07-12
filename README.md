@@ -7,3 +7,10 @@
 - [Deep Dive on Apollo 2.5 – Apollo Auto](https://medium.com/apollo-auto/deep-dive-on-apollo-2-5-1e716ec94617)
 - [LAM related course from udacity](https://in.udacity.com/course/artificial-intelligence-for-robotics--cs373)
 
+## Research papers
+- [A Systematic Comparison of Deep Learning Architectures in an Autonomous Vehicle](https://arxiv.org/abs/1803.09386)
+- [Digging Into  Self-Supervised Monocular Depth Estimation](https://arxiv.org/abs/1806.01260)
+- [Learning to Drive in a day](https://arxiv.org/abs/1807.00412)
+- [Generative Adversarial Imitation Learning](https://files.slack.com/files-pri/T46RYAMQX-F9XCUT06M/gail.pdf)
+- [A Beginner's Reference for Imitation Learning](https://files.slack.com/files-pri/T46RYAMQX-F9YQPSS94/imitiation_learning_overview.pdf)
+
