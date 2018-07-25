@@ -8,6 +8,7 @@
 - [LAM related course from udacity](https://in.udacity.com/course/artificial-intelligence-for-robotics--cs373)
 
 ## Research papers
+- [ ] [CNN-SLAM](https://www.youtube.com/watch?v=z_NJxbkQnBU)
 - [A Systematic Comparison of Deep Learning Architectures in an Autonomous Vehicle](https://arxiv.org/abs/1803.09386)
 - [Digging Into  Self-Supervised Monocular Depth Estimation](https://arxiv.org/abs/1806.01260)
 - [Learning to Drive in a day](https://arxiv.org/abs/1807.00412)
@@ -15,4 +16,4 @@
 - [A Beginner's Reference for Imitation Learning](https://files.slack.com/files-pri/T46RYAMQX-F9YQPSS94/imitiation_learning_overview.pdf)
 
 ## Tutorials: 
-- [PythonRobotics - Python sample codes for robotics algorithms - SLAM](https://atsushisakai.github.io/PythonRobotics/)
+- [ ] [PythonRobotics - Python sample codes for robotics algorithms - SLAM](https://atsushisakai.github.io/PythonRobotics/)
