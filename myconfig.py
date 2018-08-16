@@ -12,11 +12,11 @@ LABELS = [
     {
         'attributes': {
             'type':  'rect',
-            'class': 'yellow'
+            'class': 'green'
         },
         'inserter': 'sloth.items.RectItemInserter',
         'item':     'sloth.items.RectItem',
         'hotkey':   'y',
-        'text':     'Yellow',
+        'text':     'Green',
     },
 ]
