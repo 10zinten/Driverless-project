@@ -4,6 +4,7 @@ Creating dataset for our cone object detection model for donkey car.
 
 import os
 from PIL import Image
+from tqdm import tqdm
 
 data_dir = 'data/'
 tub_src = os.path.join(data_dir, 'tub_17_18-08-03')
@@ -37,18 +38,19 @@ if __name__ == '__main__':
 
     # create first dataset
     count = 0
-    for filename in filenames[:mid]:
+    print("Creating {}".format(tub_des_1))
+    for filename in tqdm(filenames[:mid]):
         if save(filename, tub_des_1):
             count += 1
     print("[INFO] Created {} with {} images".format(tub_des_1, count))
 
     count = 0
-    for filename in filenames[mid:]:
+    print("Creating {}".format(tun_des_2))
+    for filename in tqdm(filenames[mid:]):
         if save(filename, tub_des_2):
             count += 1
     print('[INFO] Created {} with {} images'.format(tub_des_2, count))
 
     # save all the not image file into file
     with open('not_images', 'w') as f:
-        for filename in not_images:
-            f.write(filename)
+        f.writelines(not_image)
