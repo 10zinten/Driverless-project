@@ -8,7 +8,9 @@
 - [LAM related course from udacity](https://in.udacity.com/course/artificial-intelligence-for-robotics--cs373)
 
 ## Research papers
-- [ ] [CNN-SLAM](https://www.youtube.com/watch?v=z_NJxbkQnBU)
+- [SqueezeSeg: Convolutional Neural Nets with Recurrent CRF for Real-Time Road-Object Segmentation from 3D LiDAR Point Cloud](https://github.com/BichenWuUCB/SqueezeSeg)
+- [Vote3Deep: Fast Object Detection in 3D Point Clouds Using Efficient Convolutional Neural Networks](https://www.youtube.com/watch?v=WUOSmAfeXIw)
+- [CNN-SLAM](https://www.youtube.com/watch?v=z_NJxbkQnBU)
 - [A Systematic Comparison of Deep Learning Architectures in an Autonomous Vehicle](https://arxiv.org/abs/1803.09386)
 - [Digging Into  Self-Supervised Monocular Depth Estimation](https://arxiv.org/abs/1806.01260)
 - [Learning to Drive in a day](https://arxiv.org/abs/1807.00412)
