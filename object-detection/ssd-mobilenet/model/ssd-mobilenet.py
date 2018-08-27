@@ -19,6 +19,13 @@ class SSDMobileNet:
         sess = self.sess
         pass
 
+    def build_optimizer(self):
+        """
+        Define Loss function for SSD
+        Create Optimizer
+        """
+        pass
+
     def __build_names(self):
         '''Name of the feature maps.'''
         pass
