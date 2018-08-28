@@ -260,6 +260,10 @@ def dropout(x, dropout_keep_prob, is_training):
 ############################################################################################################
 # Utilities for layers
 
+def zero_pad(tensor):
+    padding = tf.constant([[0, 0], [1, 1], [1, 1], [0, 0]])
+    return tf.pad(tensor, padding, 'CONSTANT')
+
 def __variable_with_weight_decay(kernel_shape, initializer, wd):
     """
     Create a variable with L2 Regularization (Weight Decay)
