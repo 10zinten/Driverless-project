@@ -63,7 +63,7 @@ class MobileNetBase:
             ############################################################################################
             conv2_1_dw, conv2_1_pw = depthwise_separable_conv2d('conv_ds_2', zero_pad(conv1_1),
                                                                 width_multiplier=self.args.width_multiplier,
-                                                                num_filters=64, kernel_size=(3, 3), padding='VLAID',
+                                                                num_filters=64, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
                                                                 batchnorm_enabled=self.args.batchnorm_enabled,
                                                                 activation=tf.nn.relu6,
@@ -140,7 +140,7 @@ class MobileNetBase:
 
             conv5_2_dw, conv5_2_pw = depthwise_separable_conv2d('conv_ds_9', zero_pad(conv5_1_pw),
                                                                 width_multiplier=self.args.width_multiplier,
-                                                                num_filters=512, kernel_size=(3, 3), padding='SAME',
+                                                                num_filters=512, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
                                                                 batchnorm_enabled=self.args.batchnorm_enabled,
                                                                 activation=tf.nn.relu6,
@@ -149,16 +149,28 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
             self.__add_to_nodes([conv5_2_dw, conv5_2_pw])
             ############################################################################################
-            conv6_1_dw, conv6_1_pw = depthwise_separable_conv2d('conv_ds_14', zero_pad(conv5_2_pw),
+            conv6_1_dw, conv6_1_pw = depthwise_separable_conv2d('conv_ds_10', zero_pad(conv5_2_pw),
                                                                 width_multiplier=self.args.width_multiplier,
-                                                                num_filters=1024, kernel_size=(3, 3), padding='SAME',
+                                                                num_filters=1024, kernel_size=(3, 3), padding='VALID',
+                                                                stride=(2, 2),
+                                                                batchnorm_enabled=self.args.batchnorm_enabled,
+                                                                activation=tf.nn.relu6,
+                                                                is_training=self.is_training,
+                                                                l2_strength=self.args.l2_strength,
+                                                                biases=(self.args.bias, self.args.bias))
+
+            self.__add_to_nodes([conv6_1_dw, conv6_1_pw])
+            conv6_2_dw, conv6_2_pw = depthwise_separable_conv2d('conv_ds_11', zero_pad(conv6_1_pw),
+                                                                width_multiplier=self.args.width_multiplier,
+                                                                num_filters=1024, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
                                                                 batchnorm_enabled=self.args.batchnorm_enabled,
                                                                 activation=tf.nn.relu6,
                                                                 is_training=self.is_training,
                                                                 l2_strength=self.args.l2_strength,
                                                                 biases=(self.args.bias, self.args.bias))
-            self.__add_to_nodes([conv6_1_dw, conv6_1_pw])
+
+            self.__add_to_nodes([conv6_2_dw, conv6_2_pw])
             print('Model Created successfully')
             for name, act in self.nodes.items():
                 print(name, act.get_shape().as_list())
