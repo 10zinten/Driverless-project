@@ -52,7 +52,6 @@ class MobileNetBase:
             with tf.name_scope('pre_processing'):
                 preprocessed_input = (self.X - self.mean_img) / 255.0
 
-            print(zero_pad(preprocessed_input).get_shape().as_list())
             # Model is here!
             conv1_1 = conv2d('conv_1', zero_pad(preprocessed_input), num_filters=int(round(32 * self.args.width_multiplier)),
                              kernel_size=(3, 3),
@@ -60,7 +59,6 @@ class MobileNetBase:
                              batchnorm_enabled=self.args.batchnorm_enabled,
                              is_training=self.is_training, l2_strength=self.args.l2_strength, bias=self.args.bias)
             self.__add_to_nodes([conv1_1])
-            print(conv1_1.get_shape().as_list())
             ############################################################################################
             conv2_1_dw, conv2_1_pw = depthwise_separable_conv2d('conv_ds_2', zero_pad(conv1_1),
                                                                 width_multiplier=self.args.width_multiplier,
@@ -174,8 +172,6 @@ class MobileNetBase:
             self.__add_to_nodes([conv6_2_dw, conv6_2_pw])
             self.last_conv = conv6_2_pw
             print('Model Created successfully')
-            for name, act in self.nodes.items():
-                print(name, act.get_shape().as_list())
 
 
     def __restore(self, file_name, sess):
@@ -183,7 +179,6 @@ class MobileNetBase:
             print("[INFO] Loading ImageNet pretrained weights...")
             variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='mobilenet_base')
             pretrained = load_obj(file_name)
-            print(pretrained)
             run_list = []
             for variable in variables:
                 for key, value in pretrained.items():
