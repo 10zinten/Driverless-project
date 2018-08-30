@@ -9,8 +9,9 @@ from layers import conv2d
 
 class SSDMobileNet:
 
-    def __init__(self, sess, args):
+    def __init__(self, sess, args, preset):
         self.sess = sess
+        self.preset = preset
         self.args = args
         self.image_input = None
         self.result = None
@@ -105,6 +106,13 @@ class SSDMobileNet:
         Create Optimizer
         """
 
+    def __build_classifier(self):
+        with tf.variable_scope('classifier'):
+            self.__classifiers = []
+            for i in range(len(self.__maps)):
+                fmap = self.__maps[i]
+                map_size = self.preset.maps[i].size
+                for j in range(2+len(self.preset.maps[i].aspect_ratios)):
 
     def __build_names(self):
         '''Name of the feature maps.'''
@@ -127,5 +135,3 @@ if __name__ == "__main__":
     # print('Image reshape: ', img.shape)
     # last_conv = sess.run([ssd.base.last_conv], feed_dict={ssd.base.X: img, ssd.base.is_training: False})
     # print("last conv: ", last_conv[0].shape)
-    collection_name = tf.GraphKeys.REGULARIZATION_LOSSES
-    print(collection_name)
