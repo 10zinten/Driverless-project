@@ -8,8 +8,8 @@ from utils import parse_args
 
 class SSDMobileNet:
 
-    def __init__(self, args):
-        self.sess = None
+    def __init__(self, sess, args):
+        self.sess = sess
         self.args = args
         self.image_input = None
         self.result = None
@@ -27,6 +27,7 @@ class SSDMobileNet:
         """ Build the model from MobileNet. """
         self.num_classes = num_classes + 1
         base = MobileNetBase(self.args)
+        base.load_pretrained_weights(self.sess)
 
 
     def __load_mobilenet(self, dir):
@@ -46,4 +47,6 @@ class SSDMobileNet:
 
 if __name__ == "__main__":
     config_args = parse_args()
-    ssd = SSDMobileNet(config_args)
+
+    sess = tf.Session()
+    ssd = SSDMobileNet(sess, config_args)

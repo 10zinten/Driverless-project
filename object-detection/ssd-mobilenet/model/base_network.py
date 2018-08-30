@@ -178,18 +178,19 @@ class MobileNetBase:
 
     def __restore(self, file_name, sess):
         try:
-            print("Loading ImageNet pretrained weights...")
+            print("[INFO] Loading ImageNet pretrained weights...")
             variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='mobilenet_base')
-            dict = load_obj(file_name)
+            pretrained = load_obj(file_name)
+            print(pretrained)
             run_list = []
             for variable in variables:
-                for key, value in dict.items():
+                for key, value in pretrained.items():
                     if key in variable.name:
                         run_list.append(tf.assign(variable, value))
             sess.run(run_list)
-            print("ImageNet Pretrained Weights Loaded Initially\n\n")
+            print("[INFO] ImageNet Pretrained Weights Loaded Initially\n\n")
         except:
-            print("No pretrained ImageNet weights exist. Skipping...\n\n")
+            print("[INFO]No pretrained ImageNet weights exist. Skipping...\n\n")
 
     def load_pretrained_weights(self, sess):
         self.__restore(self.pretrained_path, sess)
