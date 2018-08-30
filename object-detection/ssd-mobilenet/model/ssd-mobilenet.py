@@ -18,6 +18,7 @@ class SSDMobileNet:
         self.confidence_loss = None
         self.labels = None
         self.losses = None
+        self.base = None
         self.__build()
 
     def __build(self):
@@ -26,8 +27,8 @@ class SSDMobileNet:
     def build_from_mobilenet(self, num_classes):
         """ Build the model from MobileNet. """
         self.num_classes = num_classes + 1
-        base = MobileNetBase(self.args)
-        base.load_pretrained_weights(self.sess)
+        self.base = MobileNetBase(self.args)
+        self.base.load_pretrained_weights(self.sess)
 
 
     def __load_mobilenet(self, dir):
@@ -50,3 +51,15 @@ if __name__ == "__main__":
 
     sess = tf.Session()
     ssd = SSDMobileNet(sess, config_args)
+    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    sess.run(init)
+
+    # test the base network feedforward
+    import cv2
+    img = cv2.imread('../../prototype/MobileNet/data/test_images/0.jpg')
+    print("Image before resize: ", img.shape)
+    img = cv2.resize(img, (160, 160))
+    img = np.expand_dims(img, axis=0)
+    print('Image reshape: ', img.shape)
+    last_conv = sess.run([ssd.base.last_conv], feed_dict={ssd.base.X: img, ssd.base.is_training: False})
+    print("last conv: ", last_conv[0].shape)

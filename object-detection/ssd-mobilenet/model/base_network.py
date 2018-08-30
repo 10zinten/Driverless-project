@@ -19,6 +19,7 @@ class MobileNetBase:
         self.mean_img = None
         self.nodes = {}
         self.args = args
+        self.last_conv = None
 
         self.pretrained_path = os.path.realpath(self.args.pretrained_path)
 
@@ -171,6 +172,7 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
 
             self.__add_to_nodes([conv6_2_dw, conv6_2_pw])
+            self.last_conv = conv6_2_pw
             print('Model Created successfully')
             for name, act in self.nodes.items():
                 print(name, act.get_shape().as_list())
