@@ -4,7 +4,23 @@ import numpy as np
 import tensorflow as tf
 
 from model.base_network import MobileNetBase
-from model.layers import conv2d
+from model.layers import conv2d, __variable_with_weight_decay
+
+
+def create_detector(x, depth, mapsize, name, l2_strength):
+    with tf.variable_scope(name):
+        strides = [1, 1, 1, 1]
+        kernel_shape = [3, 3, x.get_shape()[3], depth]
+        initializer = tf.contrib.layers.xavier_initializer()
+
+        w = __variable_with_weight_decay(kernel_shape, initializer, l2_strength)
+        b = tf.Variable(tf.zeros(depth), name='biases')
+
+        x = tf.nn.conv2d(x, w, strides=strides, padding='SAME')
+        x = tf.nn.bias_add(x, b)
+        x = tf.reshape(x, [-1, mapsize.w*mapsize.h, depth])
+    return x
+
 
 class SSDMobileNet:
 
@@ -12,14 +28,23 @@ class SSDMobileNet:
         self.sess = sess
         self.preset = preset
         self.args = args
-        self.image_input = None
+
+        self.X = None
+        self.labels = None
+        self.num_classes = 2 + 1 # 2 for orange and green cone, 1 for gb
+        self.num_vars = self.num_classes + 4
+
+        self.classifier = None
+        self.locator = None
         self.result = None
+
         self.loss = None
         self.localization_loss = None
         self.confidence_loss = None
-        self.labels = None
         self.losses = None
+
         self.base = None
+
         self.__build()
 
     def __build(self):
@@ -36,6 +61,9 @@ class SSDMobileNet:
 
         self.__select_feature_maps()
         print("[INFO] Feature maps selecttion successful... ok")
+
+        self.__build_multibox_head()
+        print("[INFO] Multibox head build successful... ok")
 
     def __init_input(self):
          with tf.variable_scope('input'):
@@ -105,14 +133,27 @@ class SSDMobileNet:
         Create Optimizer
         """
 
-    def __build_classifier(self):
-        with tf.variable_scope('classifier'):
-            self.__classifiers = []
+    def __build_multibox_head(self):
+        with tf.variable_scope('multibox_head'):
+            self.__detectors = []
             for i in range(len(self.__maps)):
                 fmap = self.__maps[i]
                 map_size = self.preset.maps[i].size
                 for j in range(2+len(self.preset.maps[i].aspect_ratios)):
-                    pass
+                    name = 'detector{}_{}'.format(i, j)
+                    detector = create_detector(fmap, self.num_vars, map_size, name, self.args.l2_strength)
+                    self.__detectors.append(detector)
+
+        with tf.variable_scope('output'):
+            output = tf.concat(self.__detectors, axis=1, name='output')
+            self.logits = output [:, :, :self.num_classes]
+
+        with tf.variable_scope('result'):
+            self.classifier = tf.nn.softmax(self.logits)
+            self.locator = output[:, :, self.num_classes:]
+            self.result = tf.concat([self.classifier, self.locator],
+                                    axis=-1, name='result')
+
 
     def __build_names(self):
         '''Name of the feature maps.'''
