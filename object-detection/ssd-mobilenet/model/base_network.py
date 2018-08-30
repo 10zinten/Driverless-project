@@ -10,27 +10,24 @@ class MobileNetBase:
     MobileNet Base Class
     """
 
-    def __init__(self,
-                 args):
+    def __init__(self, args, X, is_training):
 
         # init parameters and input
-        self.X = None
-        self.is_training = None
+        self.X = X
+        self.is_training = is_training
         self.mean_img = None
         self.nodes = {}
         self.args = args
-        self.last_conv = None
+
+        # feature map from mobilenet
+        self.conv3_1_pw = None
+        self.conv4_1_pw = None
+        self.conv5_3_pw = None
+        self.conv6_2_pw = None
 
         self.pretrained_path = os.path.realpath(self.args.pretrained_path)
 
         self.__build()
-
-    def __init_input(self):
-        with tf.variable_scope('input'):
-            # Input images
-            self.X = tf.placeholder(tf.float32,
-                                    [None, 160, 160, 3])
-            self.is_training = tf.placeholder(tf.bool)
 
     def __init_mean(self):
         # Preparing the mean image.
@@ -42,9 +39,7 @@ class MobileNetBase:
 
     def __build(self):
         self.__init_mean()
-        self.__init_input()
-        print("[INFO] creating mobilenet base")
-        self.out = self.__init_network()
+        self.__init_network()
 
     def __init_network(self):
         with tf.variable_scope('mobilenet_base'):
@@ -82,7 +77,7 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
             self.__add_to_nodes([conv2_2_dw, conv2_2_pw])
             ############################################################################################
-            conv3_1_dw, conv3_1_pw = depthwise_separable_conv2d('conv_ds_4', zero_pad(conv2_2_pw),
+            conv3_1_dw, self.conv3_1_pw = depthwise_separable_conv2d('conv_ds_4', zero_pad(conv2_2_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=128, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
@@ -91,9 +86,9 @@ class MobileNetBase:
                                                                 is_training=self.is_training,
                                                                 l2_strength=self.args.l2_strength,
                                                                 biases=(self.args.bias, self.args.bias))
-            self.__add_to_nodes([conv3_1_dw, conv3_1_pw])
+            self.__add_to_nodes([conv3_1_dw, self.conv3_1_pw])
 
-            conv3_2_dw, conv3_2_pw = depthwise_separable_conv2d('conv_ds_5', zero_pad(conv3_1_pw),
+            conv3_2_dw, conv3_2_pw = depthwise_separable_conv2d('conv_ds_5', zero_pad(self.conv3_1_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=256, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(2, 2),
@@ -104,7 +99,7 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
             self.__add_to_nodes([conv3_2_dw, conv3_2_pw])
             ############################################################################################
-            conv4_1_dw, conv4_1_pw = depthwise_separable_conv2d('conv_ds_6', zero_pad(conv3_2_pw),
+            conv4_1_dw, self.conv4_1_pw = depthwise_separable_conv2d('conv_ds_6', zero_pad(conv3_2_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=256, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
@@ -113,9 +108,9 @@ class MobileNetBase:
                                                                 is_training=self.is_training,
                                                                 l2_strength=self.args.l2_strength,
                                                                 biases=(self.args.bias, self.args.bias))
-            self.__add_to_nodes([conv4_1_dw, conv4_1_pw])
+            self.__add_to_nodes([conv4_1_dw, self.conv4_1_pw])
 
-            conv4_2_dw, conv4_2_pw = depthwise_separable_conv2d('conv_ds_7', zero_pad(conv4_1_pw),
+            conv4_2_dw, conv4_2_pw = depthwise_separable_conv2d('conv_ds_7', zero_pad(self.conv4_1_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=512, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(2, 2),
@@ -137,7 +132,7 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
             self.__add_to_nodes([conv5_1_dw, conv5_1_pw])
 
-            conv5_2_dw, conv5_2_pw = depthwise_separable_conv2d('conv_ds_9', zero_pad(conv5_1_pw),
+            conv5_2_dw, self.conv5_2_pw = depthwise_separable_conv2d('conv_ds_9', zero_pad(conv5_1_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=512, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
@@ -146,9 +141,9 @@ class MobileNetBase:
                                                                 is_training=self.is_training,
                                                                 l2_strength=self.args.l2_strength,
                                                                 biases=(self.args.bias, self.args.bias))
-            self.__add_to_nodes([conv5_2_dw, conv5_2_pw])
+            self.__add_to_nodes([conv5_2_dw, self.conv5_2_pw])
             ############################################################################################
-            conv6_1_dw, conv6_1_pw = depthwise_separable_conv2d('conv_ds_10', zero_pad(conv5_2_pw),
+            conv6_1_dw, conv6_1_pw = depthwise_separable_conv2d('conv_ds_10', zero_pad(self.conv5_2_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=1024, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(2, 2),
@@ -159,7 +154,7 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
 
             self.__add_to_nodes([conv6_1_dw, conv6_1_pw])
-            conv6_2_dw, conv6_2_pw = depthwise_separable_conv2d('conv_ds_11', zero_pad(conv6_1_pw),
+            conv6_2_dw, self.conv6_2_pw = depthwise_separable_conv2d('conv_ds_11', zero_pad(conv6_1_pw),
                                                                 width_multiplier=self.args.width_multiplier,
                                                                 num_filters=1024, kernel_size=(3, 3), padding='VALID',
                                                                 stride=(1, 1),
@@ -169,14 +164,13 @@ class MobileNetBase:
                                                                 l2_strength=self.args.l2_strength,
                                                                 biases=(self.args.bias, self.args.bias))
 
-            self.__add_to_nodes([conv6_2_dw, conv6_2_pw])
-            self.last_conv = conv6_2_pw
+            self.__add_to_nodes([conv6_2_dw, self.conv6_2_pw])
             print('Model Created successfully')
 
 
     def __restore(self, file_name, sess):
         try:
-            print("[INFO] Loading ImageNet pretrained weights...")
+            print("\n[INFO] Loading ImageNet pretrained weights...")
             variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='mobilenet_base')
             pretrained = load_obj(file_name)
             run_list = []
@@ -185,9 +179,9 @@ class MobileNetBase:
                     if key in variable.name:
                         run_list.append(tf.assign(variable, value))
             sess.run(run_list)
-            print("[INFO] ImageNet Pretrained Weights Loaded Initially\n\n")
+            print("[INFO] ImageNet Pretrained Weights Loaded Successful... ok\n")
         except:
-            print("[INFO]No pretrained ImageNet weights exist. Skipping...\n\n")
+            print("[INFO]No pretrained ImageNet weights exist. Skipping...\n")
 
     def load_pretrained_weights(self, sess):
         self.__restore(self.pretrained_path, sess)
