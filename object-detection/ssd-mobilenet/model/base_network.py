@@ -1,8 +1,10 @@
-import tensorflow as tf
-from layers import depthwise_separable_conv2d, conv2d, dropout, zero_pad
 import os
-from utils import load_obj, save_obj
+
 import numpy as np
+import tensorflow as tf
+
+from model.layers import depthwise_separable_conv2d, conv2d, dropout, zero_pad
+from model.utils import load_obj, save_obj
 
 
 class MobileNetBase:
@@ -165,7 +167,7 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
 
             self.__add_to_nodes([conv6_2_dw, self.conv6_2_pw])
-            print('Model Created successfully')
+            print('[INFO] Model Created successfully')
 
 
     def __restore(self, file_name, sess):
@@ -181,7 +183,7 @@ class MobileNetBase:
             sess.run(run_list)
             print("[INFO] ImageNet Pretrained Weights Loaded Successful... ok\n")
         except:
-            print("[INFO]No pretrained ImageNet weights exist. Skipping...\n")
+            print("[INFO] No pretrained ImageNet weights exist. Skipping...\n")
 
     def load_pretrained_weights(self, sess):
         self.__restore(self.pretrained_path, sess)

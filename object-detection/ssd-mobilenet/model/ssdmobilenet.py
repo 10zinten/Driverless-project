@@ -3,9 +3,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from base_network import MobileNetBase
-from utils import parse_args
-from layers import conv2d
+from model.base_network import MobileNetBase
+from model.layers import conv2d
 
 class SSDMobileNet:
 
@@ -96,8 +95,8 @@ class SSDMobileNet:
         ]
 
         # senity check
-        for feat in self.__maps:
-            print(feat.name, feat.get_shape().as_list())
+        # for feat in self.__maps:
+        #    print(feat.name, feat.get_shape().as_list())
 
 
     def build_optimizer(self):
@@ -113,6 +112,7 @@ class SSDMobileNet:
                 fmap = self.__maps[i]
                 map_size = self.preset.maps[i].size
                 for j in range(2+len(self.preset.maps[i].aspect_ratios)):
+                    pass
 
     def __build_names(self):
         '''Name of the feature maps.'''
