@@ -95,8 +95,8 @@ class SSDMobileNet:
         ]
 
         # senity check
-        # for feat in self.__maps:
-        #    print(feat.name, feat.get_shape().as_list())
+        for feat in self.__maps:
+            print(feat.name, feat.get_shape().as_list())
 
 
     def build_optimizer(self):
@@ -117,21 +117,3 @@ class SSDMobileNet:
     def __build_names(self):
         '''Name of the feature maps.'''
         pass
-
-if __name__ == "__main__":
-    config_args = parse_args()
-
-    sess = tf.Session()
-    ssd = SSDMobileNet(sess, config_args)
-    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    sess.run(init)
-
-    # test the base network feedforward
-    # iimport cv2
-    # img = cv2.imread('../../prototype/MobileNet/data/test_images/0.jpg')
-    # print("Image before resize: ", img.shape)
-    # img = cv2.resize(img, (160, 160))
-    # img = np.expand_dims(img, axis=0)
-    # print('Image reshape: ', img.shape)
-    # last_conv = sess.run([ssd.base.last_conv], feed_dict={ssd.base.X: img, ssd.base.is_training: False})
-    # print("last conv: ", last_conv[0].shape)
