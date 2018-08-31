@@ -19,7 +19,7 @@ SSD_PRESETS = {
                                   SSDMap(Size( 1,  1), 0.9,   [2, 0.5]),
                               ],
                               extra_scale = 107.5,
-                              num_anchors = 8732)
+                              num_anchors = 790)
 }
 
 
