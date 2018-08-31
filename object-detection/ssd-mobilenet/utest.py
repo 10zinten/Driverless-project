@@ -28,14 +28,34 @@ def test_frame(f):
         print("[Test status]: Fail ...")
         print("[INFO]: ", a.args[0])
 
-def sample_image():
+def sample_single_datapoint():
+    # paramters
+    batch_size = 1
+    num_classes = 3
+    num_anchors = 790
+    num_vars = 7
+
+    # Read image
     img = cv2.imread('../prototype/MobileNet/data/test_images/0.jpg')
     print(" - Image before resize: ", img.shape)
     img = cv2.resize(img, (160, 160))
     img = np.expand_dims(img, axis=0)
     print(' - Image reshape: ', img.shape)
 
-    return img
+    # Create labels: [batch_size, num_anchors]
+    # Confidence Ground Truth
+    gt_cl = []
+    for i in range(batch_size):
+        x = np.eye(num_classes)
+        # select row at random choice
+        gt_cl.append(x[np.random.choice(x.shape[0], size=num_anchors)].tolist())
+    gt_cl = np.array(gt_cl)
+
+    # Localization Ground Truth
+    gt_loc = np.random.rand(batch_size, num_anchors, num_vars-num_classes)
+
+    label = np.concatenate((gt_cl, gt_loc), axis=-1)
+    return img, label
 
 ################################################################################
 #                                 TEST CASES                                   #
@@ -43,7 +63,7 @@ def sample_image():
 
 # test the base network feedforward
 def test_basenetwork_feedforward():
-    img = sample_image()
+    img, _ = sample_single_datapoint()
     out = sess.run([ssd.base.conv6_2_pw], feed_dict={ssd.X: img, ssd.is_training: False})
     print("last conv: ", out[0].shape)
 
@@ -62,12 +82,12 @@ def test_feature_map_shape():
         assert fmap.get_shape().as_list() == expected_shapes[i], "Shape not matching for {}".format(fmap.name)
 
 def test_ssd_confidence_loss():
-    img = sample_image()
-    labels = np.random.rand(1, 790, 7)
+    img, label = sample_single_datapoint()
+
     ssd.build_optimizer()
     feed_dict = {
             ssd.X: img,
-            ssd.labels: labels,
+            ssd.labels: label,
             ssd.is_training: False
     }
 
