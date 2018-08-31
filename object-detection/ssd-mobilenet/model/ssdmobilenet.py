@@ -126,6 +126,9 @@ class SSDMobileNet:
         for feat in self.__maps:
             print(feat.name, feat.get_shape().as_list())
 
+    def get_maps(self):
+        return self.__maps
+
 
     def build_optimizer(self):
         """
