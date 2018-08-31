@@ -146,16 +146,140 @@ class SSDMobileNet:
                     name = 'detector{}_{}'.format(i, j)
                     detector = create_detector(fmap, self.num_vars, map_size, name, self.args.l2_strength)
                     self.__detectors.append(detector)
+        print(" - [INFO] Number of detector: ", len(self.__detectors))
+        print(" - [INFO] Fisrt detector shape: ", self.__detectors[0].get_shape().as_list())
 
         with tf.variable_scope('output'):
             output = tf.concat(self.__detectors, axis=1, name='output')
             self.logits = output [:, :, :self.num_classes]
+        print(" - [INFO] Output shape: ", output.get_shape().as_list())
 
         with tf.variable_scope('result'):
             self.classifier = tf.nn.softmax(self.logits)
             self.locator = output[:, :, self.num_classes:]
             self.result = tf.concat([self.classifier, self.locator],
                                     axis=-1, name='result')
+
+    def build_optimizer(self, learning_rate=0.001, momentum=0.9):
+        self.labels = tf.placeholder(tf.float32, name='labels',
+                                     shape=[None, None, self.num_vars])
+
+        with tf.variable_scope('ground_truth'):
+            # Classification gt tensor
+            # shape: (batch_size, num_anchors, num_classes)
+            gt_cl = self.labels[:, :, :self.num_classes]
+
+            # Localization gt tensor
+            # shape: (batch_size, num_anchors, 4)
+            gt_loc = self.labels[:, :, self.num_classes:]
+
+            # Batch size
+            # Shape: scalar
+            batch_size = tf.shape(gt_cl)[0]
+
+        with tf.variable_scope('match_counters'):
+            # Number of anchors per sample
+            # Shape: (batch_size)
+            total_num = tf.ones([batch_size], dtype=tf.int64) * \
+                        tf.to_int64(self.preset.num_anchors)
+
+            # Number of negative (not-matched) anchors per sample, computed by
+            # counting boxes of the background class in each sample.
+            # Shape: (batch_size)
+            negatives_num = tf.count_nonzero(gt_cl[:, :, -1], axis=1)
+
+            # Number of positive (matched) anchors per sample
+            # Shape: (batch_size)
+            positives_num = total_num - negatives_num
+
+            # Number of positives per sample that is division-safe
+            # Shape: (batch_size)
+            positives_num_safe = tf.where(tf.equal(positives_num, 0),
+                                          tf.ones([batch_size ])*10e-15,
+                                          tf.to_float(positives_num))
+
+        with tf.variable_scope('match_masks'):
+            # Boolean tensor determining whether an anchor is a positive
+            # Shape: (batch_size, num_anchors)
+            positives_mask = tf.equal(gt_cl[:, :, -1], 0)
+
+            # Boolean tensor determining whether an anchor is a negative
+            negatives_mask = tf.logical_not(positives_mask)
+
+        with tf.variable_scope('confidence_loss'):
+            # Cross-entorpy tensor
+            # Shape: (batch_size, num_anchors)
+            conf = tf.nn.softmax_cross_entropy_with_logits_v2(labels=gt_cl,
+                                                              logits=self.logits)
+
+            # Sum up the loss of all the positive anchors
+            # Positives - the loss of neg anchors is zeroed out
+            # Shape: (batch_size, num_anchors)
+            positives_conf = tf.where(positives_mask, conf, tf.zeros_like(conf))
+
+            # Total loss of positive anchors
+            # Shape: (batch_size)
+            positives_sum = tf.reduce_sum(positives_conf, axis=-1)
+
+            # Find neg anchors with highest conf loss
+            # Negatives - the loss of positive anchor is zeroed out
+            # Shape: (batch_size, num_anchors)
+            negatives_conf = tf.where(negatives_mask, conf, tf.zeros_like(conf))
+
+            # Top neg - sorted conf loss with highest one first
+            # Shape: (batch_size, num_anchors)
+            negatives_top = tf.nn.top_k(negatives_conf, self.preset.num_anchors)[0]
+
+            # Find num of negs we want to keep are
+            # Max num of negs to keep per sample - keep 3 time as many as pos
+            # anchors in the sample
+            # Shape: (batch_size)
+            negatives_num_max = tf.minimum(negatives_num, 3*positives_num)
+
+            # mask out superfluous negs and compute the sum of the loss
+            # Transposed vector of maximum negs per sample
+            # Shape: (batch_size, 1)
+            negatives_num_max_t = tf.expand_dims(negatives_num_max, 1)
+
+            # Range tensor: [0, 1, 2, ..., num_anchors-1]
+            # Shape: (num_anchors)
+            rng = tf.range(0, self.preset.num_anchors, 1)
+
+            # Row range, int64, row of a matrix
+            # shape: (1, num_anchors)
+            range_row = tf.to_int64(tf.expand_dims(rng, 0))
+
+            # mask of max neg
+            # shape: (batch_size, num_anchors)
+            negatives_max_mask = tf.less(range_row, negatives_num_max_t)
+
+
+            # Max negs - all posi and superfluous negs are zeroed out.
+            # Shape: (batch_sizei, num_anchors)
+            negatives_max = tf.where(negatives_max_mask, negatives_top,
+                                     tf.zeros_like(negatives_top))
+
+            # Sum of max negs for each sample
+            # Shape: (batch_size)
+            negatives_max_sum = tf.reduce_sum(negatives_max, axis=-1)
+
+            # Compute confidence loss for each element
+            # Total confidence loss for each sample
+            # Shape: (batch_size)
+            confidence_loss = tf.add(positives_sum, negatives_max_sum)
+
+            # Total confidence loss normalized by the number of positives per
+            # sample
+            # Shape: (batch_size)
+            confidence_loss = tf.where(tf.equal(positives_num, 0),
+                                       tf.zeros([batch_size]),
+                                       tf.div(confidence_loss,
+                                              positives_num_safe))
+
+            # Mean confidence loss for the batch
+            # Shape: scalar
+            self.confidence_loss = tf.reduce_mean(confidence_loss,
+                                                  name='confidence_loss')
 
 
     def __build_names(self):
