@@ -128,9 +128,6 @@ class SSDMobileNet:
             self.ssd_conv8_2
         ]
 
-        # senity check
-        for feat in self.__maps:
-            print(feat.name, feat.get_shape().as_list())
 
     def get_maps(self):
         return self.__maps

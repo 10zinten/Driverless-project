@@ -167,7 +167,6 @@ class MobileNetBase:
                                                                 biases=(self.args.bias, self.args.bias))
 
             self.__add_to_nodes([conv6_2_dw, self.conv6_2_pw])
-            print('[INFO] Model Created successfully')
 
 
     def __restore(self, file_name, sess):
