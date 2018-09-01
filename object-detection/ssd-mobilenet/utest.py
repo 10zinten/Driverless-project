@@ -57,7 +57,14 @@ def sample_single_datapoint():
 
     print(" - Input shape:", img.shape)
     print(" - label shape:", label.shape)
-    return img, label
+
+    feed_dict = {
+            ssd.X: img,
+            ssd.labels: label,
+            ssd.is_training: False
+        }
+
+    return feed_dict
 
 ################################################################################
 #                                 TEST CASES                                   #
@@ -65,9 +72,9 @@ def sample_single_datapoint():
 
 # test the base network feedforward
 def test_basenetwork_feedforward():
-    img, _ = sample_single_datapoint()
-    out = sess.run([ssd.base.conv6_2_pw], feed_dict={ssd.X: img, ssd.is_training: False})
-    print("last conv: ", out[0].shape)
+    feed_dict = sample_single_datapoint()
+    out = sess.run(ssd.base.conv6_2_pw, feed_dict=feed_dict)
+    print("last conv: ", out.shape)
 
     assert out[0].shape == (1, 5, 5, 1024), "base network out shape not matched"
 
@@ -84,28 +91,24 @@ def test_feature_map_shape():
         assert fmap.get_shape().as_list() == expected_shapes[i], "Shape not matching for {}".format(fmap.name)
 
 def test_ssd_confidence_loss():
-    img, label = sample_single_datapoint()
-
-    feed_dict = {
-            ssd.X: img,
-            ssd.labels: label,
-            ssd.is_training: False
-        }
-
+    feed_dict = sample_single_datapoint()
     conf_loss = sess.run(ssd.confidence_loss, feed_dict=feed_dict)
     print(" - Confidence loss:", conf_loss)
 
 def test_ssd_localization_loss():
-    img, label = sample_single_datapoint()
-
-    feed_dict = {
-            ssd.X: img,
-            ssd.labels: label,
-            ssd.is_training: False
-        }
-
+    feed_dict = sample_single_datapoint()
     loc_loss = sess.run(ssd.localization_loss, feed_dict=feed_dict)
     print(" - Localization loss:", loc_loss)
+
+def test_final_loss():
+    feed_dict = sample_single_datapoint()
+    data_loss, reg_loss, loss = sess.run([ssd.data_loss, ssd.reg_loss, ssd.loss],
+                                         feed_dict=feed_dict)
+    print(' - Data loss:', data_loss)
+    print(' - Regularization loss:', reg_loss)
+    print(' - Final loss:', loss)
+
+    assert loss == data_loss+reg_loss, "Loss did not matched"
 
 if __name__ == "__main__":
 
@@ -113,5 +116,6 @@ if __name__ == "__main__":
     test_frame(test_feature_map_shape)
     test_frame(test_ssd_confidence_loss)
     test_frame(test_ssd_localization_loss)
+    test_frame(test_final_loss)
 
 
