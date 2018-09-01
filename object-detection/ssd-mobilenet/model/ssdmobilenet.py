@@ -354,5 +354,17 @@ class SSDMobileNet:
 
 
     def __build_names(self):
-        '''Name of the feature maps.'''
-        pass
+        '''Name of the orignal and new scopes'''
+        self.original_scopes = [
+            'conv_1', 'conv_ds_2', 'conv_ds_3', 'conv_ds_4', 'conv_ds_5',
+            'conv_ds_5', 'conv_ds_6', 'conv_ds_7', 'conv_ds_8', 'conv_ds_9',
+            'conv_ds_10', 'conv_ds_11'
+        ]
+
+        self.new_scopes = [
+            'sdd_conv7_1', 'sdd_conv7_2', 'sdd_conv8_1', 'sdd_conv8_2'
+        ]
+
+        for i in range(len(self.preset.maps)):
+            for j in range(2+len(self.preset.maps[i].aspect_ratios)):
+                self.new_scopes.append('multibox_head/dectector{}_{}'.format(i, j))
