@@ -14,7 +14,7 @@ config_args = parse_args()
 sess = tf.Session()
 preset = get_preset_by_name('mobilenet160')
 ssd = SSDMobileNet(sess, config_args, preset)
-ssd.build_optimizer()
+ssd.build_optimizer(learning_rate=5)
 
 init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 sess.run(init)
@@ -95,10 +95,14 @@ def test_ssd_confidence_loss():
     conf_loss = sess.run(ssd.confidence_loss, feed_dict=feed_dict)
     print(" - Confidence loss:", conf_loss)
 
+    assert conf_loss >= 0.0, "Not expected Confidence loss"
+
 def test_ssd_localization_loss():
     feed_dict = sample_single_datapoint()
     loc_loss = sess.run(ssd.localization_loss, feed_dict=feed_dict)
     print(" - Localization loss:", loc_loss)
+
+    assert loc_loss >= 0.0, "Not expected Localization loss"
 
 def test_final_loss():
     feed_dict = sample_single_datapoint()
@@ -108,7 +112,22 @@ def test_final_loss():
     print(' - Regularization loss:', reg_loss)
     print(' - Final loss:', loss)
 
-    assert loss == data_loss+reg_loss, "Loss did not matched"
+    assert loss == data_loss+reg_loss, "Loss did not match"
+
+def test_ssd_optimizer():
+    feed_dict = sample_single_datapoint()
+
+    loss_i = sess.run(ssd.loss, feed_dict=feed_dict)
+    print(" - Initial loss:", loss_i)
+
+    for _ in range(10):
+        _ = sess.run(ssd.optimizer, feed_dict=feed_dict)
+
+    loss_o = sess.run(ssd.loss, feed_dict=feed_dict)
+    print(" - Optimized loss:", loss_o)
+
+    assert loss_i != loss_o, "Optimizer is not updating the weights"
+
 
 if __name__ == "__main__":
 
@@ -117,5 +136,6 @@ if __name__ == "__main__":
     test_frame(test_ssd_confidence_loss)
     test_frame(test_ssd_localization_loss)
     test_frame(test_final_loss)
+    test_frame(test_ssd_optimizer)
 
 

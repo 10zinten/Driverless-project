@@ -41,6 +41,7 @@ class SSDMobileNet:
         self.classifier = None
         self.locator = None
         self.result = None
+        self.optimizer = None
 
         self.localization_loss = None
         self.confidence_loss = None
@@ -336,6 +337,20 @@ class SSDMobileNet:
             # Final loss
             # Shape: scalar
             self.loss = tf.add(self.data_loss, self.reg_loss, name='loss')
+
+        # Create optimizer
+        with tf.variable_scope('optimizer'):
+            optimizer = tf.train.MomentumOptimizer(learning_rate, momentum)
+            optimizer = optimizer.minimize(self.loss, name='optimizer')
+
+        # Store the tensors
+        self.optimizer = optimizer
+        self.losses = {
+            'total': self.loss,
+            'localization': self.localization_loss,
+            'confidence': self.confidence_loss,
+            'regularization': self.reg_loss
+        }
 
 
     def __build_names(self):
