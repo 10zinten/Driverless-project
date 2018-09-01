@@ -42,9 +42,11 @@ class SSDMobileNet:
         self.locator = None
         self.result = None
 
-        self.loss = None
         self.localization_loss = None
         self.confidence_loss = None
+        self.data_loss = None
+        self.reg_loss = None
+        self.loss = None
         self.losses = None
 
         self.base = None
@@ -321,6 +323,22 @@ class SSDMobileNet:
             # Shape: scalar
             self.localization_loss = tf.reduce_mean(localization_loss,
                                                     name='sum_losses')
+
+        # Compute total loss
+        with tf.variable_scope('total_loss'):
+            # Data Loss - Sum of the localization and confidence loss
+            # Shape: (batch_size)
+            self.data_loss = tf.add(self.confidence_loss,
+                                            self.localization_loss,
+                                            name='data_loss')
+
+            # Regularization Loss - L2 loss on weight
+            # Shape: scalar
+            self.reg_loss = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+
+            # Final loss
+            # Shape: scalar
+            self.loss = tf.add(self.data_loss, self.reg_loss, name='loss')
 
 
     def __build_names(self):
