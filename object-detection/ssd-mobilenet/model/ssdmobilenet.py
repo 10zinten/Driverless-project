@@ -21,6 +21,10 @@ def create_detector(x, depth, mapsize, name, l2_strength):
         x = tf.reshape(x, [-1, mapsize.w*mapsize.h, depth])
     return x
 
+def smooth_l1_loss(x):
+    square_loss = 0.5 * x**2
+    absolute_loss = tf.abs(x)
+    return tf.where(tf.less(absolute_loss, 1.), square_loss, absolute_loss-0.5)
 
 class SSDMobileNet:
 
@@ -280,6 +284,43 @@ class SSDMobileNet:
             # Shape: scalar
             self.confidence_loss = tf.reduce_mean(confidence_loss,
                                                   name='confidence_loss')
+
+        # Compute the localization loss
+        with tf.variable_scope('localization_loss'):
+            # Element-wise difference btw the predicted localization loss
+            # and ground truth
+            # Shape: (batch, num_anchors, 4)
+            loc_diff = tf.subtract(self.locator, gt_loc)
+
+            # Smooth L1 loss
+            # Shape: (batch_size, num_anchors, 4)
+            loc_loss = smooth_l1_loss(loc_diff)
+
+            # Sum of localization losses for each anchor
+            # Shape: (batch_size, num_anchors)
+            loc_loss_sum = tf.reduce_sum(loc_loss, axis=-1)
+
+            # Positive locs - the loss of negative anchors is zeroed out
+            # Shape: (batch_size, num_anchors)
+            positive_locs = tf.where(positives_mask, loc_loss_sum,
+                                     tf.zeros_like(loc_loss_sum))
+
+            # Total loss of positive anchors
+            # Shape: (batch_size)
+            localization_loss = tf.reduce_sum(positive_locs, axis=-1)
+
+            # Total localization loss normalized by the number of positives per
+            # sample
+            # Shape: (batch_size)
+            localization_loss = tf.where(tf.equal(positives_num, 0),
+                                         tf.zeros([batch_size]),
+                                         tf.div(confidence_loss,
+                                                positives_num_safe))
+
+            # Mean localizationn loss for the batch
+            # Shape: scalar
+            self.localization_loss = tf.reduce_mean(localization_loss,
+                                                    name='sum_losses')
 
 
     def __build_names(self):
