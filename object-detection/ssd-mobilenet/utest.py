@@ -14,6 +14,7 @@ config_args = parse_args()
 sess = tf.Session()
 preset = get_preset_by_name('mobilenet160')
 ssd = SSDMobileNet(sess, config_args, preset)
+ssd.build_optimizer()
 
 init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 sess.run(init)
@@ -37,10 +38,8 @@ def sample_single_datapoint():
 
     # Read image
     img = cv2.imread('../prototype/MobileNet/data/test_images/0.jpg')
-    print(" - Image before resize: ", img.shape)
     img = cv2.resize(img, (160, 160))
     img = np.expand_dims(img, axis=0)
-    print(' - Image reshape: ', img.shape)
 
     # Create labels: [batch_size, num_anchors]
     # Confidence Ground Truth
@@ -55,6 +54,9 @@ def sample_single_datapoint():
     gt_loc = np.random.rand(batch_size, num_anchors, num_vars-num_classes)
 
     label = np.concatenate((gt_cl, gt_loc), axis=-1)
+
+    print(" - Input shape:", img.shape)
+    print(" - label shape:", label.shape)
     return img, label
 
 ################################################################################
@@ -84,21 +86,32 @@ def test_feature_map_shape():
 def test_ssd_confidence_loss():
     img, label = sample_single_datapoint()
 
-    ssd.build_optimizer()
     feed_dict = {
             ssd.X: img,
             ssd.labels: label,
             ssd.is_training: False
-    }
+        }
 
     conf_loss = sess.run(ssd.confidence_loss, feed_dict=feed_dict)
-    print(" - Confidence loss: ", conf_loss)
+    print(" - Confidence loss:", conf_loss)
 
+def test_ssd_localization_loss():
+    img, label = sample_single_datapoint()
+
+    feed_dict = {
+            ssd.X: img,
+            ssd.labels: label,
+            ssd.is_training: False
+        }
+
+    loc_loss = sess.run(ssd.localization_loss, feed_dict=feed_dict)
+    print(" - Localization loss:", loc_loss)
 
 if __name__ == "__main__":
 
     test_frame(test_basenetwork_feedforward)
     test_frame(test_feature_map_shape)
     test_frame(test_ssd_confidence_loss)
+    test_frame(test_ssd_localization_loss)
 
 
