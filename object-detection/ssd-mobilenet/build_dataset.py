@@ -21,6 +21,13 @@ def __to_square(array):
         array = np.vstack((array, pad))
     return array
 
+def abs2porp(dp):
+    for ann in dp['annotations']:
+        ann['x'] /= SIZE
+        ann['y'] /= SIZE
+        ann['width'] /= SIZE
+        ann['height'] /= SIZE
+
 def resize_and_save(datapoint, output_dir, size=SIZE):
     """Rezize the image w/o maintaining aspect ratio
        and save image and lable json file to output_dir
@@ -33,6 +40,8 @@ def resize_and_save(datapoint, output_dir, size=SIZE):
 
     filename = filename.split('/')[-1]
     img.save(os.path.join(output_dir, filename))
+
+    abs2porp(datapoint)
 
     datapoint['filename'] = filename
 
@@ -61,24 +70,26 @@ if __name__ == '__main__':
                'dev': dev_set,
                'test': test_set}
 
-    if not os.path.exists(args.output_dir):
-        os.mkdir(args.output_dir)
+    output_dir_img = os.path.join(args.output_dir, 'Images')
+    output_dir_labels = os.path.join(args.output_dir, 'Labels')
+
+    if not os.path.exists(output_dir_img):
+        os.mkdir(output_dir_img)
     else:
-        print('[Warning]: output_dir {} already exists'.format(args.output_dir))
+        print('[Warning]: output_dir {} already exists'.format(output_dir_img))
+
+    if not os.path.exists(output_dir_labels):
+        os.mkdir(output_dir_labels)
+    else:
+        print('[Warning]: output_dir {} already exists'.format(output_dir_labels))
 
     # Preprocess train, dev and test
     for split in ['train', 'dev', 'test']:
-        output_dir_split = os.path.join(args.output_dir, '{}_dir'.format(split))
-        if not os.path.exists(output_dir_split):
-            os.mkdir(output_dir_split)
-        else:
-            print('[Warnin]: dir {} already exists'.format(output_dir_split))
-
-        print('Processing {} data, saving preprocessed data to {}'.format(split, output_dir_split))
+        print('Processing {} data'.format(split))
         for datapoint in tqdm(dataset[split]):
-            resize_and_save(datapoint, output_dir_split, size=SIZE)
+            resize_and_save(datapoint, output_dir_img, size=SIZE)
 
-        with open(os.path.join(output_dir_split, 'labels.json'), 'w') as outfile:
+        with open(os.path.join(output_dir_labels, split + '.json'), 'w') as outfile:
             json.dump(dataset[split], outfile, indent=4)
 
         print('Done building dataset')
