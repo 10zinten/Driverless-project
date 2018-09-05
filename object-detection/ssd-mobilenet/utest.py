@@ -7,8 +7,8 @@ import tensorflow as tf
 import numpy as np
 
 from model.ssdmobilenet import SSDMobileNet
-from utils import parse_args
-from ssdutils import get_preset_by_name
+from model.utils import parse_args
+from model.ssdutils import get_preset_by_name
 
 config_args = parse_args()
 sess = tf.Session()
