@@ -1,11 +1,16 @@
-from easydict import EasyDict as edict
+import os
+import sys
 import json
 import argparse
-import os
+
 import pickle
 import tensorflow as tf
 from pprint import pprint
-import sys
+from collections import namedtuple
+from easydict import EasyDict as edict
+
+
+Size    = namedtuple('Size',    ['w', 'h'])
 
 
 def parse_args():
@@ -81,3 +86,6 @@ def calculate_flops():
     tf.profiler.profile(
         tf.get_default_graph(),
         options=tf.profiler.ProfileOptionBuilder.float_operation(), cmd='scope')
+
+
+
