@@ -6,7 +6,7 @@ import argparse
 import pickle
 import tensorflow as tf
 from pprint import pprint
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from easydict import EasyDict as edict
 
 
@@ -87,5 +87,24 @@ def calculate_flops():
         tf.get_default_graph(),
         options=tf.profiler.ProfileOptionBuilder.float_operation(), cmd='scope')
 
+
+def get_filenames_and_labels(image_dir, label_dir, split):
+    with open(os.path.join(label_dir, split+'.json'), 'r') as f:
+        datapoints = json.load(f)
+
+    dps_anno = defaultdict(lambda: [])
+    for dp in datapoints:
+        filename = os.path.join(image_dir, dp['filename'])
+        if dp['annotations']:
+            for ann in dp['annotations']:
+                bb = np.array([ann['x'], ann['y'], ann['width'], ann['height']])
+                cls = 0 if ann['class'] == "orange" else 1
+                dps_anno[filename].append((bb, cls))
+        else:
+            bb = [0, 0, 0, 0]   # for bg
+            cls = 2
+            dps_anno[filename].append((bb, cls))
+
+    return list(dps_anno.keys()), list(dps_anno.values())
 
 

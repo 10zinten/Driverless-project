@@ -7,28 +7,8 @@ import numpy as np
 
 from model.ssdmobilenet import SSDMobileNet
 from model.input_fn import input_fn
-from model.utils import parse_args
+from model.utils import parse_args, get_filenames_and_labels
 from model.ssdutils import get_preset_by_name, create_labels
-
-
-def get_filenames_and_labels(image_dir, label_dir, split):
-    with open(os.path.join(label_dir, split+'.json'), 'r') as f:
-        datapoints = json.load(f)
-
-    dps_anno = defaultdict(lambda: [])
-    for dp in datapoints:
-        filename = os.path.join(image_dir, dp['filename'])
-        if dp['annotations']:
-            for ann in dp['annotations']:
-                bb = np.array([ann['x'], ann['y'], ann['width'], ann['height']])
-                cls = 0 if ann['class'] == "orange" else 1
-                dps_anno[filename].append((bb, cls))
-        else:
-            bb = [0, 0, 0, 0]   # for bg
-            cls = 2
-            dps_anno[filename].append((bb, cls))
-
-    return list(dps_anno.keys()), list(dps_anno.values())
 
 
 if __name__ == "__main__":
