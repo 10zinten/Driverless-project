@@ -8,11 +8,11 @@ import numpy as np
 
 from model.ssdmobilenet import SSDMobileNet
 from model.utils import parse_args
-from model.ssdutils import get_preset_by_name
+from model.ssdutils import get_preset_by_name, create_labels
 
 config_args = parse_args()
 sess = tf.Session()
-preset = get_preset_by_name('mobilenet160')
+preset = get_preset_by_name('ssdmobilenet160')
 ssd = SSDMobileNet(sess, config_args, preset)
 ssd.build_optimizer(learning_rate=5)
 
@@ -21,7 +21,7 @@ sess.run(init)
 
 def test_frame(f):
     print("\n#####################################################################")
-    print("[Testing]: {}".format(' '.join(f.__name__.split('_')[1:])))
+    print("[Test Case]: {}".format(' '.join(f.__name__.split('_')[1:])))
     try:
         f()
         print("[Test Status]: Success ...")
@@ -128,6 +128,22 @@ def test_ssd_optimizer():
 
     assert loss_i != loss_o, "Optimizer is not updating the weights"
 
+def test_ssd_label_create(n_samples=3):
+
+    # Create sysnthetic gt_box
+    np.random.seed(seed=40)
+    gt = []
+    for _ in range(n_samples):
+        boxes = np.random.rand(3, 4)
+        cls = [0, 1, 0]
+        gt.append(list(zip(boxes, cls)))
+
+    labels = create_labels(preset, n_samples, 2, gt)
+
+    print(" - Number of samples:", n_samples)
+    print(" - Labels shape:", labels.shape)
+
+    assert labels.shape == (n_samples, 790, 7)
 
 if __name__ == "__main__":
 
@@ -137,5 +153,6 @@ if __name__ == "__main__":
     test_frame(test_ssd_localization_loss)
     test_frame(test_final_loss)
     test_frame(test_ssd_optimizer)
+    test_frame(test_ssd_label_create)
 
 
