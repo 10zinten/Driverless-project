@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 from math import sqrt, log
 
-from utils import Size
+from model.utils import Size
 
 
 SSDMap = namedtuple('SSDMap', ['size', 'scale', 'aspect_ratios'])
@@ -107,20 +107,20 @@ def compute_location(bx, an):
     arr = np.zeros((4))
     arr[0] = (bx[0] - an[0]) / an[2] * 10
     arr[1] = (bx[1] - an[1]) / an[3] * 10
-    arr[2] = log(box[2] / an[2]) * 5
-    arr[3] = log(box[3] / an[3]) * 5
+    arr[2] = log(bx[2] / an[2]) * 5
+    arr[3] = log(bx[3] / an[3]) * 5
 
     return arr
 
 
 def jaccard_overlap(bx, an):
     areaAn = (an[:, 1] - an[:, 0]+1) * (an[:, 3] - an[:, 2]+1)
-    areaBx = (bx[1] - bx[0]+1) * (bx[3] - bx[4]+1)
+    areaBx = (bx[1] - bx[0]+1) * (bx[3] - bx[2]+1)
 
-    ixmin = np.maximum(bx[0], an[0])
-    ixmax = np.minimum(bx[1], an[1])
-    iymin = np.maximum(bx[2], an[2])
-    iymax = np.manimum(bx[3], an[3])
+    ixmin = np.maximum(bx[0], an[:, 0])
+    ixmax = np.minimum(bx[1], an[:, 1])
+    iymin = np.maximum(bx[2], an[:, 2])
+    iymax = np.minimum(bx[3], an[:, 3])
 
     w = np.maximum(0, ixmax-ixmin+1)
     h = np.maximum(0, iymax-iymin+1)
@@ -140,32 +140,30 @@ def compute_overlap(box_arr, anchors_arr, threshold):
     return overlap_idx, iou[overlap_idx]
 
 
-def create_labels(preset, num_batch, num_classes, gt_boxes):
+def create_labels(preset, num_batch, num_classes, gts):
     """
     Create a dataset label out of ground truth.
     Shape: (num_anchors, num_classes+5)
     """
 
-    def __process_overlap(dp_id, idx, score, box, anchor, matches, num_classes, labels):
+    def __process_overlap(dp_id, idx, score, gt, anchor, matches, num_classes):
         """
         i: datapoint id
         idx: index of overlapped anchor
         score: socre of overlapped acnhor
         """
-
+        box, label = gt
         if idx in matches and matches[idx] >= score:
             return
 
         matches[idx] = score
         labels[dp_id, idx, 0:num_classes+1] = 0
-        labels[dp_id, idx, box[1]] = 1
+        labels[dp_id, idx, label] = 1
         labels[dp_id, idx, num_classes+1:] = compute_location(box, anchor)
 
 
     # Initialized the necessary variable
     anchors = get_anchors_for_preset(preset)
-    print(anchors.shape)
-    print(len(gt_boxes))
     img_size = preset.image_size
     anchors_arr = anchors2array(anchors, img_size)
     labels = np.zeros((num_batch, anchors.shape[0], num_classes+5), dtype=np.float32)
@@ -180,26 +178,15 @@ def create_labels(preset, num_batch, num_classes, gt_boxes):
     # Jaccard overlap
     overlaps = []
     for i in range(num_batch):
-        for boxes in gt_boxes[i]:
+        for box, _ in gts[i]:
             box_arr = box2array(box, img_size)
-            overlaps.append(compute_overlap(box_arr, anchor_arr, 0.5))
+            overlaps.append(compute_overlap(box_arr, anchors_arr, 0.5))
 
         matches = {}
-        for j, box in enumerate(gt_boxes[i]):
-            for idx, score in overlaps[j]:
+        for j, gt in enumerate(gts[i]):
+            idxs, scores = overlaps[j]
+            for idx, score in zip(idxs, scores):
                 anchor = anchors[idx]
-                process_overlap(i, idx, score, box, anchor, matches, num_classes, labels)
+                __process_overlap(i, idx, score, gt, anchor, matches, num_classes)
 
     return labels
-
-if __name__ == "__main__":
-    preset = get_preset_by_name('ssdmobilenet160')
-
-    # Create sysnthetic gt_box
-    boxes = np.random.rand(3, 4)
-    labels = [0, 1, 0]
-    gt_boxes = list(zip(boxes, labels))
-
-    labels = create_labels(preset, 1, 2, gt_boxes)
-    print(labels.shape)
-
