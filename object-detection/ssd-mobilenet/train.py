@@ -1,24 +1,65 @@
+import os
+import json
+from collections import defaultdict
+
 import tensorflow as tf
 import numpy as np
 
 from model.ssdmobilenet import SSDMobileNet
-from utils import parse_args
-from ssdutils import get_preset_by_name
+from model.input_fn import input_fn
+from model.utils import parse_args
+from model.ssdutils import get_preset_by_name, create_labels
+
+
+def get_filenames_and_labels(image_dir, label_dir, split):
+    with open(os.path.join(label_dir, split+'.json'), 'r') as f:
+        datapoints = json.load(f)
+
+    dps_anno = defaultdict(lambda: [])
+    for dp in datapoints:
+        filename = os.path.join(image_dir, dp['filename'])
+        if dp['annotations']:
+            for ann in dp['annotations']:
+                bb = np.array([ann['x'], ann['y'], ann['width'], ann['height']])
+                cls = 0 if ann['class'] == "orange" else 1
+                dps_anno[filename].append((bb, cls))
+        else:
+            bb = [0, 0, 0, 0]   # for bg
+            cls = 2
+            dps_anno[filename].append((bb, cls))
+
+    return list(dps_anno.keys()), list(dps_anno.values())
 
 
 if __name__ == "__main__":
+    # set the random seed for the whole graph for reproductible experiments
+    tf.set_random_seed(230)
+
+    # Load the parametes from json file
     config_args = parse_args()
 
-    sess = tf.Session()
+    # Create the input data pipeline
+    data_dir = 'dataset/'
+    image_dir = os.path.join(data_dir, 'Images')
+    label_dir = os.path.join(data_dir, 'Labels')
 
-    preset = get_preset_by_name('mobilenet160')
+    train_filenames, train_labels = get_filenames_and_labels(image_dir, label_dir, 'train')
+    dev_filenames, dev_labels = get_filenames_and_labels(image_dir, label_dir, 'dev')
 
+    # create ssd labels
+    train_size = len(train_filenames)
+    dev_size = len(dev_filenames)
+
+    preset = get_preset_by_name('ssdmobilenet160')
+    train_labels = create_labels(preset, train_size, 2, train_labels)
+    dev_labels = create_labels(preset, dev_size, 2, dev_labels)
+
+    print(train_labels.shape)
+    print(dev_labels.shape)
+
+    '''
     ssd = SSDMobileNet(sess, config_args, preset)
+    ssd.build_optimizer()
     init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     sess.run(init)
-
-    print("classifier:", ssd.classifier.get_shape())
-    print("Locator:", ssd.locator.get_shape())
-    print("Result:", ssd.result.get_shape())
-
-
+    '''
