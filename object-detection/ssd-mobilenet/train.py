@@ -66,7 +66,9 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         sess.run(train_inputs['iterator_init_op'])
+        image = sess.run(train_inputs['images'])
         label = sess.run(train_inputs['labels'])
+        print(image.shape)
         print(label.shape)
 
     '''
