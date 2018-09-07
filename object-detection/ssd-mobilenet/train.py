@@ -57,8 +57,17 @@ if __name__ == "__main__":
     train_labels = create_labels(preset, train_size, 2, train_labels)
     dev_labels = create_labels(preset, dev_size, 2, dev_labels)
 
-    print(train_labels.shape)
-    print(dev_labels.shape)
+    print("Train labels Shape:", train_labels.shape)
+    print("Dev labels Shape:", dev_labels.shape)
+
+    # Create the two iterators over the two datasets
+    train_inputs = input_fn(True, train_filenames, train_labels, config_args)
+    eval_inputs = input_fn(False, train_filenames, train_labels, config_args)
+
+    with tf.Session() as sess:
+        sess.run(train_inputs['iterator_init_op'])
+        label = sess.run(train_inputs['labels'])
+        print(label.shape)
 
     '''
     ssd = SSDMobileNet(sess, config_args, preset)

@@ -19,7 +19,7 @@ def train_preprocess(image, label):
 def input_fn(is_training, filenames, labels, args):
     """Input functions for the Cones dataset."""
 
-    num_samples = len(datapoints)
+    num_samples = len(filenames)
     assert len(filenames) > 0, 'Datapoint not found'
 
     parse_fn = lambda f, l: _parse_function(f, l)
@@ -27,7 +27,7 @@ def input_fn(is_training, filenames, labels, args):
 
     if is_training:
         dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
-            .suffle(num_samples)
+            .shuffle(num_samples)
             .map(parse_fn, num_parallel_calls=4)
             .batch(args.batch_size)
             .prefetch(1)
