@@ -3,8 +3,8 @@ from collections import namedtuple
 import numpy as np
 from math import sqrt, log
 
-from model.utils import Size
 
+Size    = namedtuple('Size',    ['w', 'h'])
 
 SSDMap = namedtuple('SSDMap', ['size', 'scale', 'aspect_ratios'])
 SSDPreset = namedtuple('SDDPreset', ['name', 'image_size', 'maps',
@@ -14,10 +14,10 @@ SSD_PRESETS = {
     'ssdmobilenet160': SSDPreset(name='mobilenet160',
                               image_size=Size(160, 160),
                               maps = [
-                                  SSDMap(Size(10, 10), 0.375, [2, 3, 0.5, 1./3.]),
-                                  SSDMap(Size( 5,  5), 0.55,  [2, 3, 0.5, 1./3.]),
-                                  SSDMap(Size( 3,  3), 0.725, [2, 0.5]),
-                                  SSDMap(Size( 1,  1), 0.9,   [2, 0.5]),
+                                  SSDMap(Size(10, 10), 0.1, [2, 1, 0.5, 1./3.]),
+                                  SSDMap(Size( 5,  5), 0.2,  [2, 3, 0.5, 1./3.]),
+                                  SSDMap(Size( 3,  3), 0.325, [2, 0.5]),
+                                  SSDMap(Size( 1,  1), 0.4,   [2, 0.5]),
                               ],
                               extra_scale = 107.5,
                               num_anchors = 790)
@@ -68,6 +68,22 @@ def get_anchors_for_preset(preset):
                     anchors.append([x, y, size[0], size[1]])
 
     return np.array(anchors)
+
+def abs2prop(xmin, xmax, ymin, ymax, img_size):
+    """
+    Convert the absolute min-max box bound to proportional center-width bounds.
+    """
+    w = float(xmax-xmin) + 1
+    h = float(ymax-ymin) + 1
+    cx = float(xmin) + w/2
+    cy = float(ymin) + h/2
+    w /= img_size.w
+    h /= img_size.h
+    cx /= img_size.w
+    cy /= img_size.h
+
+    return cx, cy, w, h
+
 
 def prop2abs(an, img_size):
     """
@@ -178,6 +194,10 @@ def create_labels(preset, num_batch, num_classes, gts):
     # Jaccard overlap
     overlaps = []
     for i in range(num_batch):
+        # avoid the image with no objects, bbox is empty array
+        if len(gts[i][0][0]) == 0:
+            continue
+
         for box, _ in gts[i]:
             box_arr = box2array(box, img_size)
             overlaps.append(compute_overlap(box_arr, anchors_arr, 0.5))
