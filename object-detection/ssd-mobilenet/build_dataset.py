@@ -21,15 +21,21 @@ def __to_square(array):
         array = np.vstack((array, pad))
     return array
 
+def make_numeraical_stable(n):
+    n = round(n)
+    n = 1 if n <= 0 else n
+    return n
+
+
 def hw_bb(bb):
     return bb[0], bb[1], bb[0]+bb[2]-1, bb[1]+bb[3]-1
 def process_ann(dp):
     for ann in dp['annotations']:
         xmin, ymin, xmax, ymax = hw_bb([ann['x'], ann['y'], ann['width'], ann['height']])
-        ann['xmin'] = xmin
-        ann['xmax'] = xmax
-        ann['ymin'] = ymin
-        ann['ymax'] = ymax
+        ann['xmin'] = make_numeraical_stable(xmin)
+        ann['xmax'] = make_numeraical_stable(xmax)
+        ann['ymin'] = make_numeraical_stable(ymin)
+        ann['ymax'] = make_numeraical_stable(ymax)
 
 def resize_and_save(datapoint, output_dir, size=SIZE):
     """Rezize the image w/o maintaining aspect ratio
