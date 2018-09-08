@@ -28,13 +28,13 @@ def smooth_l1_loss(x):
 
 class SSDMobileNet:
 
-    def __init__(self, sess, args, preset):
-        self.sess = sess
+    def __init__(self, is_training, inputs, preset, args):
         self.preset = preset
         self.args = args
+        self.is_training = is_training
 
-        self.X = None
-        self.labels = None
+        self.X = inputs['images']
+        self.labels = inputs['labels']
         self.num_classes = 2 + 1 # 2 for orange and green cone, 1 for gb
         self.num_vars = self.num_classes + 4
 
@@ -55,13 +55,12 @@ class SSDMobileNet:
         self.__build()
 
     def __build(self):
-        self.__init_input()
 
         self.__build_from_mobilenet()
         print("[INFO] Mobilenet graph build successful... ok")
 
-        self.__load_mobilenet()
-        print("[INFO] Mobilenet pretrained parameters load successful... ok")
+        # self.__load_mobilenet()
+        #  print("[INFO] Mobilenet pretrained parameters load successful... ok")
 
         self.__build_ssd_layers()
         print("[INFO] SDD layers build successful... ok")
@@ -72,21 +71,17 @@ class SSDMobileNet:
         self.__build_multibox_head()
         print("[INFO] Multibox head build successful... ok")
 
+        self.__build_loss_function()
+
     def __init_input(self):
-         with tf.variable_scope('input'):
-            # Input images
-            self.X = tf.placeholder(tf.float32,
-                                   [self.args.batch_size, self.args.img_size,
-                                    self.args.img_size, 3]
-                                   )
-            self.is_training = tf.placeholder(tf.bool)
+         pass
 
     def __build_from_mobilenet(self):
         """ Build the model from MobileNet. """
         self.base = MobileNetBase(self.args, self.X, self.is_training)
 
-    def __load_mobilenet(self):
-        self.base.load_pretrained_weights(self.sess)
+    def load_mobilenet(self, sess):
+        self.base.load_pretrained_weights(sess)
 
     def __build_ssd_layers(self):
         with tf.variable_scope('ssd_layer'):
@@ -134,12 +129,6 @@ class SSDMobileNet:
         return self.__maps
 
 
-    def build_optimizer(self):
-        """
-        Define Loss function for SSD
-        Create Optimizer
-        """
-
     def __build_multibox_head(self):
         with tf.variable_scope('multibox_head'):
             self.__detectors = []
@@ -164,9 +153,7 @@ class SSDMobileNet:
             self.result = tf.concat([self.classifier, self.locator],
                                     axis=-1, name='result')
 
-    def build_optimizer(self, learning_rate=0.001, momentum=0.9):
-        self.labels = tf.placeholder(tf.float32, name='labels',
-                                     shape=[None, None, self.num_vars])
+    def __build_loss_function(self):
 
         with tf.variable_scope('ground_truth'):
             # Classification gt tensor
@@ -338,13 +325,7 @@ class SSDMobileNet:
             # Shape: scalar
             self.loss = tf.add(self.data_loss, self.reg_loss, name='loss')
 
-        # Create optimizer
-        with tf.variable_scope('optimizer'):
-            optimizer = tf.train.MomentumOptimizer(learning_rate, momentum)
-            optimizer = optimizer.minimize(self.loss, name='optimizer')
-
         # Store the tensors
-        self.optimizer = optimizer
         self.losses = {
             'total': self.loss,
             'localization': self.localization_loss,

@@ -5,8 +5,9 @@ from collections import defaultdict
 import tensorflow as tf
 import numpy as np
 
-from model.ssdmobilenet import SSDMobileNet
+from model.model_fn import model_fn
 from model.input_fn import input_fn
+from model.training import train_and_evaluate
 from model.utils import parse_args
 from model.ssdutils import get_preset_by_name, create_labels, abs2prop, Size
 
@@ -57,23 +58,20 @@ if __name__ == "__main__":
     train_labels = create_labels(preset, train_size, 2, train_labels)
     dev_labels = create_labels(preset, dev_size, 2, dev_labels)
 
-    print("Train labels Shape:", train_labels.shape)
-    print("Dev labels Shape:", dev_labels.shape)
+    print("[INFO] Train labels Shape:", train_labels.shape)
+    print("[INFO] Dev labels Shape:", dev_labels.shape)
 
     # Create the two iterators over the two datasets
     train_inputs = input_fn(True, train_filenames, train_labels, config_args)
     eval_inputs = input_fn(False, train_filenames, train_labels, config_args)
 
-    with tf.Session() as sess:
-        sess.run(train_inputs['iterator_init_op'])
-        image = sess.run(train_inputs['images'])
-        label = sess.run(train_inputs['labels'])
-        print(image.shape)
-        print(label.shape)
 
-    '''
-    ssd = SSDMobileNet(sess, config_args, preset)
-    ssd.build_optimizer()
-    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    sess.run(init)
-    '''
+    # Define the model
+    train_model_specs = model_fn('train', train_inputs, preset, config_args)
+    eval_model_specs = model_fn('eval', eval_inputs, preset, config_args, reuse=True)
+
+    print(train_model_specs['predictions'])
+    print(train_model_specs['loss'])
+
+    # Train the model
+    train_and_evaluate(train_model_specs, eval_model_specs, 'model_dir', config_args)
