@@ -22,7 +22,10 @@ def __conv2d_p(name, x, w=None, num_filters=16, kernel_size=(3, 3), padding='SAM
     """
     with tf.variable_scope(name):
         stride = [1, stride[0], stride[1], 1]
-        kernel_shape = [kernel_size[0], kernel_size[1], x.shape[-1], num_filters]
+        if x.get_shape()[1] == 1: # last layer has dimension 1X1
+            kernel_shape = [1, 1, x.get_shape()[3], num_filters]
+        else:
+            kernel_shape = [kernel_size[0], kernel_size[1], x.get_shape()[3], num_filters]
 
         with tf.name_scope('layer_weights'):
             if w == None:

@@ -4,22 +4,10 @@ import numpy as np
 import tensorflow as tf
 
 from model.base_network import MobileNetBase
-from model.layers import conv2d, __variable_with_weight_decay
+from model.layers import conv2d
 
 
-def create_detector(x, depth, mapsize, name, l2_strength):
-    with tf.variable_scope(name):
-        strides = [1, 1, 1, 1]
-        kernel_shape = [3, 3, x.get_shape()[3], depth]
-        initializer = tf.contrib.layers.xavier_initializer()
 
-        w = __variable_with_weight_decay(kernel_shape, initializer, l2_strength)
-        b = tf.Variable(tf.zeros(depth), name='biases')
-
-        x = tf.nn.conv2d(x, w, strides=strides, padding='SAME')
-        x = tf.nn.bias_add(x, b)
-        x = tf.reshape(x, [-1, mapsize.w*mapsize.h, depth])
-    return x
 
 def smooth_l1_loss(x):
     square_loss = 0.5 * x**2
@@ -128,6 +116,17 @@ class SSDMobileNet:
     def get_maps(self):
         return self.__maps
 
+    def __create_detector(self, x, depth, mapsize, name, l2_strength):
+        x = conv2d(name, x, num_filters=depth, kernel_size=(3, 3),
+                   padding='SAME', stride=(1, 1), activation=tf.nn.relu,
+                   batchnorm_enabled=self.args.batchnorm_enabled,
+                   l2_strength=self.args.l2_strength,
+                   is_training=self.is_training, bias=self.args.bias)
+
+        x = tf.reshape(x, [-1, mapsize.w*mapsize.h, depth])
+
+        return x
+
 
     def __build_multibox_head(self):
         with tf.variable_scope('multibox_head'):
@@ -137,7 +136,7 @@ class SSDMobileNet:
                 map_size = self.preset.maps[i].size
                 for j in range(2+len(self.preset.maps[i].aspect_ratios)):
                     name = 'detector{}_{}'.format(i, j)
-                    detector = create_detector(fmap, self.num_vars, map_size, name, self.args.l2_strength)
+                    detector = self. __create_detector(fmap, self.num_vars, map_size, name, self.args.l2_strength)
                     self.__detectors.append(detector)
         print(" - [INFO] Number of detector: ", len(self.__detectors))
         print(" - [INFO] Fisrt detector shape: ", self.__detectors[0].get_shape().as_list())
