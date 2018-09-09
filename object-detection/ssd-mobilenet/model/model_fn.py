@@ -60,6 +60,12 @@ def model_fn(mode, inputs, preset, params, reuse=False):
     metric_variables = tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope="metrics")
     metrics_init_op = tf.variables_initializer(metric_variables)
 
+    # Summaries for training
+    tf.summary.scalar('loss', loss)
+    # TODO: summary for accuracy
+    tf.summary.image('train_image', inputs['images'])
+
+    # TODO: if mode == 'eval': Add incorrectly labeled images
 
     # -------------------------------------------------------------------------
     # MODEL SPECIFICATION
@@ -73,6 +79,7 @@ def model_fn(mode, inputs, preset, params, reuse=False):
     model_specs['metrics_init_op'] = metrics_init_op
     model_specs['metrics'] = metrics
     model_specs['update_metrics'] = update_metrics_op
+    model_specs['summary_op'] = tf.summary.merge_all()
 
     if is_training:
         model_specs['train_op'] = train_op

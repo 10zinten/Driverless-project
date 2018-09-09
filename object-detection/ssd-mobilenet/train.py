@@ -43,6 +43,7 @@ if __name__ == "__main__":
 
     # Create the input data pipeline
     data_dir = 'dataset/'
+    model_dir = 'experiments/basic_model'
     image_dir = os.path.join(data_dir, 'Images')
     label_dir = os.path.join(data_dir, 'Labels')
 
@@ -70,8 +71,5 @@ if __name__ == "__main__":
     train_model_specs = model_fn('train', train_inputs, preset, config_args)
     eval_model_specs = model_fn('eval', eval_inputs, preset, config_args, reuse=True)
 
-    print(train_model_specs['predictions'])
-    print(train_model_specs['loss'])
-
     # Train the model
-    train_and_evaluate(train_model_specs, eval_model_specs, 'model_dir', config_args)
+    train_and_evaluate(train_model_specs, eval_model_specs, model_dir, config_args)
