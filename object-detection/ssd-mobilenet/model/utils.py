@@ -10,6 +10,13 @@ from pprint import pprint
 from collections import namedtuple, defaultdict
 from easydict import EasyDict as edict
 
+
+from model.ssdutils import abs2prop
+
+
+Size    = namedtuple('Size',    ['w', 'h'])
+
+
 def parse_args():
     """
     Parse the arguments of the program
@@ -83,3 +90,25 @@ def calculate_flops():
     tf.profiler.profile(
         tf.get_default_graph(),
         options=tf.profiler.ProfileOptionBuilder.float_operation(), cmd='scope')
+
+def get_filenames_and_labels(image_dir, label_dir, split):
+    with open(os.path.join(label_dir, split+'.json'), 'r') as f:
+        datapoints = json.load(f)
+
+    img_size = Size(160, 160)
+    dps_anno = defaultdict(lambda: [])
+    for dp in datapoints:
+        filename = os.path.join(image_dir, dp['filename'])
+        if dp['annotations']:
+            for ann in dp['annotations']:
+                cx, cy, w, h = abs2prop(ann['xmin'], ann['xmax'], ann['ymin'], ann['ymax'], img_size)
+                bb = np.array([cx, cy, w, h])
+                cls = 0 if ann['class'] == "orange" else 1
+                dps_anno[filename].append((bb, cls))
+        else:
+            bb = np.array([])   # for bg
+            cls = 2
+            dps_anno[filename].append((bb, cls))
+
+    return list(dps_anno.keys()), list(dps_anno.values())
+

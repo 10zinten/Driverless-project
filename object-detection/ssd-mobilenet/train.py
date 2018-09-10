@@ -8,30 +8,9 @@ import numpy as np
 from model.model_fn import model_fn
 from model.input_fn import input_fn
 from model.training import train_and_evaluate
-from model.utils import parse_args
-from model.ssdutils import get_preset_by_name, create_labels, abs2prop, Size
+from model.utils import parse_args, get_filenames_and_labels
+from model.ssdutils import get_preset_by_name, create_labels
 
-
-def get_filenames_and_labels(image_dir, label_dir, split):
-    with open(os.path.join(label_dir, split+'.json'), 'r') as f:
-        datapoints = json.load(f)
-
-    img_size = Size(160, 160)
-    dps_anno = defaultdict(lambda: [])
-    for dp in datapoints:
-        filename = os.path.join(image_dir, dp['filename'])
-        if dp['annotations']:
-            for ann in dp['annotations']:
-                cx, cy, w, h = abs2prop(ann['xmin'], ann['xmax'], ann['ymin'], ann['ymax'], img_size)
-                bb = np.array([cx, cy, w, h])
-                cls = 0 if ann['class'] == "orange" else 1
-                dps_anno[filename].append((bb, cls))
-        else:
-            bb = np.array([])   # for bg
-            cls = 2
-            dps_anno[filename].append((bb, cls))
-
-    return list(dps_anno.keys()), list(dps_anno.values())
 
 
 if __name__ == "__main__":
@@ -42,7 +21,7 @@ if __name__ == "__main__":
     config_args = parse_args()
 
     # Create the input data pipeline
-    data_dir = 'dataset/'
+    data_dir = 'dataset/cone/'
     model_dir = 'experiments/basic_model'
     image_dir = os.path.join(data_dir, 'Images')
     label_dir = os.path.join(data_dir, 'Labels')
