@@ -44,3 +44,27 @@ def evaluate_sess(sess, model_specs, num_steps, writer=None, params=None):
             writer.add_summary(summ, global_step_val)
 
     return metrics_val
+
+
+def evaluate(model_specs, model_dir, params, restore_from):
+    """Evaluate the model
+
+    Args:
+
+    """
+    # Initialize tf.Saver()
+    saver = tf.train.Saver()
+
+    with tf.Session() as sess:
+        sess.run(model_specs['variable_init_op'])
+
+        # Reload weights from weights subdirectory
+        save_path = os.path.join(model_dir, restore_from)
+        if os.path.isdir(save_path):
+            save_path = tf.train.latest_checkpoint(save_path)
+        saver.restore(sess, save_path)
+
+        # Evaluate
+        num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
+        metrics = evaluate_sess(sess, model_specs, num_steps)
+        metrics_name = '_'.join(restore_from.split('/'))
