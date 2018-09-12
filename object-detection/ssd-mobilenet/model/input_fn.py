@@ -2,18 +2,30 @@
 
 import tensorflow as tf
 
+from model.ssd_preprocessing import preprocess_image
+
+
 def _parse_function(filename, label):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_jpeg(image_string, channels=3)
     image = tf.image.convert_image_dtype(image_decoded, tf.float32)
     return image, label
 
-def train_preprocess(image, label):
-    image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
-    image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+def _preprocess(image, gt, is_training):
+    labels = gt[:, :3]
+    bboxes = gt[:, 3:]
 
-    image = tf.clip_by_value(image, 0.0, 1.0)
-    return image, label
+    out = preprocess_image(image, labels, bboxes, [160, 160], is_training=is_training,
+                     data_format="channel_last", output_rgb=False)
+
+    if is_training:
+        image, labels, bboxes = out
+        gt = tf.concat([labels, bboxes], axis=-1)
+        return image, gt
+    else:
+        image = out
+        return image, gt
+
 
 
 def input_fn(is_training, filenames, labels, args):
@@ -22,19 +34,22 @@ def input_fn(is_training, filenames, labels, args):
     num_samples = len(filenames)
     assert len(filenames) > 0, 'Datapoint not found'
 
-    parse_fn = lambda f, l: _parse_function(f, l)
-    # parse_fn = lambda f, l: train_preprocess(f, l)
+    parse_fn = lambda f, gt: _parse_function(f, gt)
+    train_preprocess_fn = lambda image, gt: _preprocess(image, gt, True)
+    eval_preprocess_fn = lambda image, gt: _preprocess(image, gt, False)
 
     if is_training:
         dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
             .shuffle(num_samples)
             .map(parse_fn, num_parallel_calls=4)
+            .map(train_preprocess_fn, num_parallel_calls=4)
             .batch(args.batch_size)
             .prefetch(1)
         )
     else:
         dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
                .map(parse_fn)
+               .map(eval_preprocess_fn, num_parallel_calls=4)
                .batch(args.batch_size)
                .prefetch(1)
         )
