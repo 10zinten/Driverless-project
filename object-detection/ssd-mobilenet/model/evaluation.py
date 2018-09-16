@@ -1,6 +1,7 @@
 """Tensorflow utility functions for evaluatioin"""
 
 import os
+import logging
 
 from tqdm import trange
 import tensorflow as tf
@@ -34,7 +35,7 @@ def evaluate_sess(sess, model_specs, num_steps, writer=None, params=None):
     metrics_values = {k: v[0] for k, v in eval_metrics.items()}
     metrics_val = sess.run(metrics_values)
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_val.items())
-    print("- Eval metrics: " + metrics_string)
+    logging.info("- Eval metrics: " + metrics_string)
 
     # Add summaries manually to writer at global_step_val
     if writer is not None:
@@ -68,3 +69,5 @@ def evaluate(model_specs, model_dir, params, restore_from):
         num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
         metrics = evaluate_sess(sess, model_specs, num_steps)
         metrics_name = '_'.join(restore_from.split('/'))
+        save_path = os.join(model_dir, "metric_test_{}.json".format(metrics_name))
+        save_dict_to_json(metrics, save_path)

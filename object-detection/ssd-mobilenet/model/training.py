@@ -1,4 +1,5 @@
 import os
+import logging
 
 from tqdm import trange
 import tensorflow as tf
@@ -49,7 +50,7 @@ def train_sess(sess, model_specs, num_steps, params, writer):
     metrics_values = {k: v[0] for k, v in metrics.items()}
     metrics_val = sess.run(metrics_values)
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_val.items())
-    print(" - Train metrics: " + metrics_string)
+    logging.info(" - Train metrics: " + metrics_string)
 
 
 
@@ -91,6 +92,7 @@ def train_and_evaluate(train_model_specs, eval_model_specs, model_dir, params, r
         best_eval_loss = 1000
         for epoch in range(begin_at_epoch, begin_at_epoch+params.num_epochs):
             # Run one epoch
+            logging.info("Epoch {}/{}".format(epoch + 1, begin_at_epoch + params.num_epochs))
             num_steps = (params.train_size + params.batch_size - 1) // params.batch_size
             train_sess(sess, train_model_specs, num_steps, params, train_writer)
 
@@ -110,7 +112,7 @@ def train_and_evaluate(train_model_specs, eval_model_specs, model_dir, params, r
                 # Save weights
                 best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
                 best_save_path = best_saver.save(sess, best_save_path, global_step=epoch+1)
-                print("- Found new best accuracy, saving in {}".format(best_save_path))
+                logging.info("- Found new best accuracy, saving in {}".format(best_save_path))
                 best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
                 save_dict_to_json(metrics, best_json_path)
 
