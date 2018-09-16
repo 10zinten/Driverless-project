@@ -4,6 +4,7 @@ from tqdm import trange
 import tensorflow as tf
 
 from model.evaluation import evaluate_sess
+from model.utils import save_dict_to_json
 
 
 def train_sess(sess, model_specs, num_steps, params, writer):
@@ -52,7 +53,7 @@ def train_sess(sess, model_specs, num_steps, params, writer):
 
 
 
-def train_and_evaluate(train_model_specs, eval_model_specs, model_dir, params, restor_from=None):
+def train_and_evaluate(train_model_specs, eval_model_specs, model_dir, params, restore_from=None):
     """Train the model and evaluate every epoch.
 
     Args:
@@ -76,7 +77,12 @@ def train_and_evaluate(train_model_specs, eval_model_specs, model_dir, params, r
         # Load the mobilenet pretrain weights
         train_model_specs['mobilenet_init_op'](sess)
 
-        # TODO:  Reload weights from directory if specified
+        # Reload weights from directory if specified
+        if restore_from is not None:
+            if os.path.isdir(restore_from):
+                restore_from = tf.train.latest_checkpoint(restore_from)
+                begin_at_epoch = int(restore_from.split('-')[-1])
+            last_saver.restore(sess, restore_from)
 
         # Create summary writer for train and eval
         train_writer = tf.summary.FileWriter(os.path.join(model_dir, 'train_summaries'), sess.graph)
@@ -105,3 +111,9 @@ def train_and_evaluate(train_model_specs, eval_model_specs, model_dir, params, r
                 best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
                 best_save_path = best_saver.save(sess, best_save_path, global_step=epoch+1)
                 print("- Found new best accuracy, saving in {}".format(best_save_path))
+                best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
+                save_dict_to_json(metrics, best_json_path)
+
+            # save lastest eval metric in a json file in model directory
+            last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
+            save_dict_to_json(metrics, last_json_path)

@@ -2,19 +2,52 @@ import os
 import sys
 import json
 import argparse
+import logging
 
-import pickle
 import numpy as np
-import tensorflow as tf
-from pprint import pprint
+import pickle
 from collections import namedtuple, defaultdict
 from easydict import EasyDict as edict
-
 
 from model.ssdutils import abs2prop
 
 
 Size    = namedtuple('Size',    ['w', 'h'])
+
+class Params():
+    """class that loads hyperparameters from a json file."""
+
+    def __init__(self, json_path):
+        self.update(json_path)
+
+    def save(self, json_path):
+        """save parameters to json file"""
+        with open(json_path, 'w') as f:
+            json.dump(self.__dict__, ff, indent=4)
+
+    def update(self, json_path):
+        """load parameters from json file"""
+        with open(json_path) as f:
+            params = json.load(f)
+            self.__dict__.update(params)
+
+    @property
+    def dict(self):
+        """Gives dict-like access to Params instance by `params.dict['learning_rate']`"""
+        return self.__dict__
+
+
+def save_dict_to_json(d, json_path):
+    """Saves dict of floats in json file
+
+    Args:
+        d: (dict) of float-castable values (np.float, int, float, etc.)
+        json_path: (string) path to json file
+    """
+    with open(json_path, 'w') as f:
+        # convert the values to float for json (it doesn't accept np.array, np.float
+        d = {k: float(v) for k, v in d.items()}
+        json.dump(d, f, indent=4)
 
 
 def parse_args():
@@ -83,13 +116,6 @@ def save_obj(obj, name):
     with open(name, 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
-
-def calculate_flops():
-    # Print to stdout an analysis of the number of floating point operations in the
-    # model broken down by individual operations.
-    tf.profiler.profile(
-        tf.get_default_graph(),
-        options=tf.profiler.ProfileOptionBuilder.float_operation(), cmd='scope')
 
 def get_filenames_and_labels(image_dir, label_dir, split):
     with open(os.path.join(label_dir, split+'.json'), 'r') as f:
