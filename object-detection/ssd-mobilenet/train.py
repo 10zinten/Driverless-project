@@ -9,7 +9,7 @@ import numpy as np
 from model.model_fn import model_fn
 from model.input_fn import input_fn
 from model.training import train_and_evaluate
-from model.utils import parse_args, get_filenames_and_labels
+from model.utils import get_filenames_and_labels
 from model.utils import Params
 from model.utils import set_logger
 from model.ssdutils import get_preset_by_name, create_labels
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # Create the two iterators over the two datasets
     train_inputs = input_fn(True, train_filenames, train_labels, params)
-    eval_inputs = input_fn(False, train_filenames, train_labels, params)
+    eval_inputs = input_fn(False, dev_filenames, dev_labels, params)
 
     # Define the model
     logging.info("Creating the model...")
