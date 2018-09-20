@@ -7,17 +7,49 @@ import tensorflow as tf
 import numpy as np
 
 from model.ssdmobilenet import SSDMobileNet
-from model.utils import parse_args
+from model.utils import Params
+from model.utils import get_filenames_and_labels
+from model.input_fn import input_fn
 from model.ssdutils import get_preset_by_name, create_labels
 
-config_args = parse_args()
-sess = tf.Session()
-preset = get_preset_by_name('ssdmobilenet160')
-ssd = SSDMobileNet(sess, config_args, preset)
-ssd.build_optimizer(learning_rate=5)
 
+# Test set up
+json_path = os.path.join('experiments/base_model', 'params.json')
+params = Params(json_path)
+
+# Create the input data pipeline
+print("Creating the datasets...")
+data_dir = 'dataset/cone/'
+model_dir = 'experiments/base_model/'
+image_dir = os.path.join(data_dir, 'Images')
+label_dir = os.path.join(data_dir, 'Labels')
+
+# get the filenames from the train and dev set
+demo_filenames, demo_labels = get_filenames_and_labels(image_dir, label_dir, 'train')
+# create ssd labels
+params.demo_size = len(demo_filenames)
+
+preset = get_preset_by_name('ssdmobilenet160')
+demo_labels = create_labels(preset, params.demo_size, 2, demo_labels)
+print("[INFO] Demo labels Shape:", demo_labels.shape)
+# Create the two iterators over the two datasets
+demo_inputs = input_fn(True, demo_filenames, demo_labels, params)
+iterator_init_op = demo_inputs['iterator_init_op']
+
+sess = tf.Session()
+sess.run(iterator_init_op)
+print("Test image shape", sess.run(demo_inputs['images']).shape)
+print("Test label shape", sess.run(demo_inputs['labels']).shape)
+preset = get_preset_by_name('ssdmobilenet160')
+ssd = SSDMobileNet(True, demo_inputs, preset, params)
+loss = ssd.losses['total']
+optimizer = tf.train.MomentumOptimizer(learning_rate=params.learning_rate,
+                                       momentum=params.momentum)
+train_op = optimizer.minimize(loss)
 init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-sess.run(init)
+
+sess.run([init, iterator_init_op])
+
 
 def test_frame(f):
     print("\n#####################################################################")
@@ -72,42 +104,41 @@ def sample_single_datapoint():
 
 # test the base network feedforward
 def test_basenetwork_feedforward():
-    feed_dict = sample_single_datapoint()
-    out = sess.run(ssd.base.conv6_2_pw, feed_dict=feed_dict)
+    out = sess.run(ssd.base.conv6_2_pw)
     print("last conv: ", out.shape)
 
-    assert out[0].shape == (1, 5, 5, 1024), "base network out shape not matched"
+    assert out.shape == (params.batch_size, 5, 5, 1024), "base network out shape not matched"
 
 # test the feature maps shape
 def test_feature_map_shape():
     expected_shapes = [
-        [1, 10, 10, 512],
-        [1, 5, 5, 1024],
-        [1, 3, 3, 512],
-        [1, 1, 1, 256]
+        [None, 10, 10, 512],
+        [None, 5, 5, 1024],
+        [None, 3, 3, 512],
+        [None, 1, 1, 256]
     ]
     fmaps = ssd.get_maps()
     for i, fmap in enumerate(fmaps):
+        print(" -", fmap.get_shape().as_list(), expected_shapes[i])
         assert fmap.get_shape().as_list() == expected_shapes[i], "Shape not matching for {}".format(fmap.name)
 
 def test_ssd_confidence_loss():
-    feed_dict = sample_single_datapoint()
-    conf_loss = sess.run(ssd.confidence_loss, feed_dict=feed_dict)
+    conf_loss = sess.run(ssd.confidence_loss) #, feed_dict=feed_dict)
     print(" - Confidence loss:", conf_loss)
 
     assert conf_loss >= 0.0, "Not expected Confidence loss"
 
 def test_ssd_localization_loss():
-    feed_dict = sample_single_datapoint()
-    loc_loss = sess.run(ssd.localization_loss, feed_dict=feed_dict)
+    # feed_dict = sample_single_datapoint()
+    loc_loss = sess.run(ssd.localization_loss) #, feed_dict=feed_dict)
     print(" - Localization loss:", loc_loss)
 
     assert loc_loss >= 0.0, "Not expected Localization loss"
 
 def test_final_loss():
-    feed_dict = sample_single_datapoint()
-    data_loss, reg_loss, loss = sess.run([ssd.data_loss, ssd.reg_loss, ssd.loss],
-                                         feed_dict=feed_dict)
+    # feed_dict = sample_single_datapoint()
+    data_loss, reg_loss, loss = sess.run([ssd.data_loss, ssd.reg_loss, ssd.loss])
+                                         # feed_dict=feed_dict)
     print(' - Data loss:', data_loss)
     print(' - Regularization loss:', reg_loss)
     print(' - Final loss:', loss)
@@ -115,15 +146,16 @@ def test_final_loss():
     assert loss == data_loss+reg_loss, "Loss did not match"
 
 def test_ssd_optimizer():
-    feed_dict = sample_single_datapoint()
 
-    loss_i = sess.run(ssd.loss, feed_dict=feed_dict)
+    # feed_dict = sample_single_datapoint()
+    sess.run(iterator_init_op)
+    loss_i = sess.run(loss) #, feed_dict=feed_dict)
     print(" - Initial loss:", loss_i)
 
     for _ in range(10):
-        _ = sess.run(ssd.optimizer, feed_dict=feed_dict)
+        _ = sess.run(train_op) #, feed_dict=feed_dict)
 
-    loss_o = sess.run(ssd.loss, feed_dict=feed_dict)
+    loss_o = sess.run(loss) #, feed_dict=feed_dict)
     print(" - Optimized loss:", loss_o)
 
     assert loss_i != loss_o, "Optimizer is not updating the weights"
@@ -154,5 +186,3 @@ if __name__ == "__main__":
     test_frame(test_final_loss)
     test_frame(test_ssd_optimizer)
     test_frame(test_ssd_label_create)
-
-
