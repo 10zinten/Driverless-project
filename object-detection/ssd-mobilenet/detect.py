@@ -9,7 +9,7 @@ import tensorflow as tf
 from model.ssdmobilenet import SSDMobileNet
 from model.ssdutils import get_preset_by_name, get_anchors_for_preset
 from model.ssdutils import decode_boxes, suppress_overlaps
-from model.utils import Params
+from model.utils import Params, draw_box
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model/',
@@ -61,10 +61,16 @@ if __name__ == "__main__":
             save_path = tf.train.latest_checkpoint(save_path)
         saver.restore(sess, save_path)
 
-        result = sess.run(result)
+        result, image = sess.run([result, image])
 
     anchors = get_anchors_for_preset(preset)
-    boxes = decode_boxes(result[0], anchors, 0.2, None)
+    boxes = decode_boxes(result[0], anchors, 0.4, None)
     print('Num of decoded boxes:', len(boxes))
     boxes = suppress_overlaps(boxes)
     print('Num of final boxes', len(boxes))
+
+    # Plot the boxes image
+    image = np.asarray(Image.open(args.image))
+    for box in boxes:
+        draw_box(image, box)
+    cv2.imwrite('test/result/test.jpeg', image)

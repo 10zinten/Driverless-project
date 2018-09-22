@@ -5,11 +5,12 @@ import argparse
 import logging
 
 import numpy as np
+import cv2
 import pickle
 from collections import namedtuple, defaultdict
 from easydict import EasyDict as edict
 
-from model.ssdutils import abs2prop
+from model.ssdutils import abs2prop, prop2abs
 
 
 Size    = namedtuple('Size',    ['w', 'h'])
@@ -164,3 +165,15 @@ def get_filenames_and_labels(image_dir, label_dir, split):
 
     return list(dps_anno.keys()), list(dps_anno.values())
 
+
+def draw_box(img, box):
+    img_size = Size(img.shape[1], img.shape[0])
+    xmin, xmax, ymin, ymax = prop2abs(box[2], img_size)
+    img_box = np.copy(img)
+    cv2.rectangle(img_box, (xmin, ymin), (xmax, ymax), (1, 1, 1), 2)
+    # cv2.rectangle(img_box, (xmin-1, ymin), (xmax+1, ymin-20), color, cv2.FILLED)
+    # font = cv2.FONT_HERSHEY_SIMPLEX
+    # cv2.putText(img_box, box.label, (xmin+5, ymin-5), font, 0.5,
+    #             (255, 255, 255), 1, cv2.LINE_AA)
+    alpha = 0.8
+    cv2.addWeighted(img_box, alpha, img, 1.-alpha, 0, img)
