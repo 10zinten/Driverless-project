@@ -43,8 +43,8 @@ if __name__ == "__main__":
         result = ssd.result
 
     # list all the variables of graphs
-    for var in tf.all_variables():
-        print(var)
+    # for var in tf.all_variables():
+    #     print(var)
 
     # Initialize the tf.Saver
     saver = tf.train.Saver()
@@ -65,5 +65,6 @@ if __name__ == "__main__":
 
     anchors = get_anchors_for_preset(preset)
     boxes = decode_boxes(result[0], anchors, 0.2, None)
-    for box in boxes:
-        print(box)
+    print('Num of decoded boxes:', len(boxes))
+    boxes = suppress_overlaps(boxes)
+    print('Num of final boxes', len(boxes))

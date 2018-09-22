@@ -260,6 +260,7 @@ def decode_boxes(pred, anchors, conf_threshold=0.01, detections_cap=200):
 def non_max_suppression(boxes, overlap_th):
     # convert to absolute coordinates
     xmin, xmax, ymin, ymax = [], [], [], []
+    conf = []
     img_size = Size(160, 160)
 
     for box in boxes:
@@ -268,12 +269,13 @@ def non_max_suppression(boxes, overlap_th):
         xmax.append(params[1])
         ymin.append(params[2])
         ymax.append(params[3])
+        conf.append(box[0])
 
     xmin = np.array(xmin)
     xmax = np.array(xmax)
     ymin = np.array(ymin)
     ymax = np.array(ymax)
-    conf = np.array(boxes[0])
+    conf = np.array(conf)
 
     # Compute the area of each box and sort the indices by conf level
     area = (xmax - xmin + 1) * (ymax - ymin + 1)
@@ -302,8 +304,8 @@ def non_max_suppression(boxes, overlap_th):
         intersection = w * h
 
         # Compute IOU and suppress indices with IOU higher a threshold
-        union = area[i] + area[idxs] - intersection
-        iou = intersection / unio
+        union = area[best_conf_idx] + area[idxs] - intersection
+        iou = intersection / union
         overlap = iou > overlap_th
         suppress = np.nonzero(overlap)[0]
         idxs = np.delete(idxs, suppress)
@@ -323,5 +325,5 @@ def suppress_overlaps(boxes):
         class_boxes[box[1]].append(box)
 
     for cid, box in class_boxes.items():
-        selected_boxes += non_max_suppression(v, 0.45)
+        selected_boxes += non_max_suppression(box, 0.45)
     return selected_boxes
