@@ -59,7 +59,8 @@ class SSDMobileNet:
         self.__build_multibox_head()
         print("[INFO] Multibox head build successful... ok")
 
-        self.__build_loss_function()
+        if self.labels is not None:
+            self.__build_loss_function()
 
     def __init_input(self):
          pass

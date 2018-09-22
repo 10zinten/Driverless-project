@@ -3,6 +3,8 @@
 import tensorflow as tf
 
 from model.ssdmobilenet import SSDMobileNet
+# from model.ssdutils import tf_decode_boxes, tf_suppress_overlaps, get_anchors_for_preset
+
 
 def model_fn(mode, inputs, preset, params, reuse=False):
     """Model functios defining the graph operations.
@@ -24,7 +26,7 @@ def model_fn(mode, inputs, preset, params, reuse=False):
     # MODEL: define the layers of the model
     with tf.variable_scope('model', reuse=reuse):
         ssd = SSDMobileNet(is_training, inputs, preset, params)
-        predictions = ssd.result
+        result = ssd.result
 
 
     # Define loss and accuracy
@@ -50,7 +52,6 @@ def model_fn(mode, inputs, preset, params, reuse=False):
     with tf.variable_scope("metrics"):
         metrics = {
             'loss': tf.metrics.mean(loss)
-            # TODO: add accuracy metrics
         }
 
     # Group the update ops for the tf.metrics
@@ -75,6 +76,7 @@ def model_fn(mode, inputs, preset, params, reuse=False):
                                                tf.local_variables_initializer())
     model_specs['predictions'] = predictions
     model_specs['loss'] = loss
+    model_specs['result'] = result
     # TODO: add accuracy value
     model_specs['metrics_init_op'] = metrics_init_op
     model_specs['metrics'] = metrics

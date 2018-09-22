@@ -1,7 +1,6 @@
-from collections import namedtuple
-
 import numpy as np
-from math import sqrt, log
+from math import sqrt, log, exp
+from collections import namedtuple, defaultdict
 
 
 Size    = namedtuple('Size',    ['w', 'h'])
@@ -36,6 +35,8 @@ def get_anchors_for_preset(preset):
     """
 
     # Compute the with and heights of the anchor boxes for every scale
+    # For each filter_map find the widths and heights of diff aspect ratio
+    # Widths and heights of particular filter map are common for all the spacial location of this filter map
     box_sizes = []
     for i in range(len(preset.maps)):
         map_param = preset.maps[i]
@@ -57,6 +58,7 @@ def get_anchors_for_preset(preset):
         box_sizes.append(sizes)
 
     # compute the actual boxes for every scale and feature map
+    # Using common widths and height of filermap, find x, y for different spacial location in filter map.
     anchors = []
     for k in range(len(preset.maps)):
         fk = preset.maps[k].size[0]
@@ -156,7 +158,7 @@ def compute_overlap(box_arr, anchors_arr, threshold):
     return overlap_idx, iou[overlap_idx]
 
 
-def create_labels(preset, num_batch, num_classes, gts):
+def create_labels(preset, num_samples, num_classes, gts):
     """
     Create a dataset label out of ground truth.
     Shape: (num_anchors, num_classes+5)
@@ -182,7 +184,7 @@ def create_labels(preset, num_batch, num_classes, gts):
     anchors = get_anchors_for_preset(preset)
     img_size = preset.image_size
     anchors_arr = anchors2array(anchors, img_size)
-    labels = np.zeros((num_batch, anchors.shape[0], num_classes+5), dtype=np.float32)
+    labels = np.zeros((num_samples, anchors.shape[0], num_classes+5), dtype=np.float32)
 
     labels[:, :, num_classes] = 1    # bg
     labels[:, :, num_classes+1] = 0  # x offset
@@ -193,7 +195,7 @@ def create_labels(preset, num_batch, num_classes, gts):
     # For every box compute the best match and all the matches above 0.5
     # Jaccard overlap
     overlaps = []
-    for i in range(num_batch):
+    for i in range(num_samples):
         # avoid the image with no objects, bbox is empty array
         if len(gts[i][0][0]) == 0:
             continue
@@ -210,3 +212,116 @@ def create_labels(preset, num_batch, num_classes, gts):
                 __process_overlap(i, idx, score, gt, anchor, matches, num_classes)
 
     return labels
+
+def decode_location(bx, an):
+    bx[bx > 100] = 100 # only happends early training
+    arr = np.zeros((4))
+
+    arr[0] = bx[0]/10 * an[2] + an[0]
+    arr[1] = bx[1]/10 * an[3] + an[1]
+    arr[2] = exp(bx[2]/5) * an[2]
+    arr[3] = exp(bx[3]/5) * an[3]
+
+    return arr
+
+def tf_decode_boxes(bx, an):
+    pass
+
+def decode_boxes(pred, anchors, conf_threshold=0.01, detections_cap=200):
+    """
+    Decode boxes from the result of ssd.
+    """
+
+    # Find the detections
+    num_classes = pred.shape[1]-4
+    bg_class = num_classes-1
+    box_class = np.argmax(pred[:, :num_classes-1], axis=1)
+    conf = pred[np.arange(len(pred)), box_class]
+
+    if detections_cap is not None:
+        detections = np.argsort(conf)[::-1][:detectionscap]
+    else:
+        detections = np.argsort(conf)[::-1]
+
+    # Decode coordinates of each box with confidence over a threshold
+    boxes = []
+    for idx in detections:
+        conf = pred[idx, box_class[idx]]
+        if conf < conf_threshold:
+            break
+
+        box = decode_location(pred[idx, num_classes:], anchors[idx])
+        cid = box_class[idx]
+        boxes.append((conf, cid, box))
+
+    return boxes
+
+
+def non_max_suppression(boxes, overlap_th):
+    # convert to absolute coordinates
+    xmin, xmax, ymin, ymax = [], [], [], []
+    img_size = Size(160, 160)
+
+    for box in boxes:
+        params = prop2abs(box[2], img_size)
+        xmin.append(params[0])
+        xmax.append(params[1])
+        ymin.append(params[2])
+        ymax.append(params[3])
+
+    xmin = np.array(xmin)
+    xmax = np.array(xmax)
+    ymin = np.array(ymin)
+    ymax = np.array(ymax)
+    conf = np.array(boxes[0])
+
+    # Compute the area of each box and sort the indices by conf level
+    area = (xmax - xmin + 1) * (ymax - ymin + 1)
+    idxs = np.argsort(conf)
+    pick = []
+
+    # Loop until we still have indices to precess:
+    while len(idxs) > 0:
+        # Grap the last index (ie. the most conf detection),
+        # Remove it from the list of indeces to precess
+        # Put on the list of picks
+        last = idxs.shape[0]-1
+        best_conf_idx = idxs[last]
+        idxs = np.delete(idxs, last) # indices of remaining windows
+        pick.append(best_conf_idx)
+        suppress = []
+
+        # Figure out the intersection with remaining windows
+        ixmin = np.maximum(xmin[best_conf_idx], xmin[idxs])
+        ixmax = np.minimum(xmax[best_conf_idx], xmax[idxs])
+        iymin = np.maximum(ymin[best_conf_idx], ymin[idxs])
+        iymax = np.minimum(ymax[best_conf_idx], ymax[idxs])
+
+        w = np.maximum(0, ixmax - ixmin + 1)
+        h = np.maximum(0, iymax - iymin + 1)
+        intersection = w * h
+
+        # Compute IOU and suppress indices with IOU higher a threshold
+        union = area[i] + area[idxs] - intersection
+        iou = intersection / unio
+        overlap = iou > overlap_th
+        suppress = np.nonzero(overlap)[0]
+        idxs = np.delete(idxs, suppress)
+
+    # Result the selected boxes
+    selected = []
+    for i in pick:
+        selected.append(boxes[i])
+
+    return selected
+
+
+def suppress_overlaps(boxes):
+    class_boxes = defaultdict(list)
+    selected_boxes = []
+    for box in boxes:
+        class_boxes[box[1]].append(box)
+
+    for cid, box in class_boxes.items():
+        selected_boxes += non_max_suppression(v, 0.45)
+    return selected_boxes
