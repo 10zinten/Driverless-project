@@ -54,4 +54,10 @@ $ python evaluate.py --model_dir <path_to_experiment> --data_dir <path_to_datase
 
 ### Detect bounding box on a single image
 ```
-$ python detect --model_dir <path_to_experiment> --image <path_to_image>
+$ python detect.py --model_dir <path_to_experiment> --image <path_to_image>
+```
+
+### Testing all the components
+```
+$ python utest.py --model_dir <path_to_experiment>
+```
