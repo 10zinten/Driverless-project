@@ -1,7 +1,7 @@
 # Cone Detection with SSD-Mobilenet
 
 ### Why SSD-Mobilenet
-- **Choice of SDD over YOLO**: for us detecting far away cone is more important then one which is near by and far away cone tends to very small and YOLO is less accurate for detecting small image than ssd.
+- **Choice of SDD over YOLO**: For us detecting far away cone is more important then one which is near by and far away cone tends to very small and YOLO is less accurate for detecting small image than ssd.
 - **Choice of Mobilenet over other base network like VGG**: Mobilenet is desinged for small compute device and it has the best trade of between accuracy and frame rate on small device like Rasberry Pi and our prototype using Rasberry Pi. Therefore it is the most suitable  base network arichitecture for us.
 
 ### Sample Dataset
@@ -37,7 +37,7 @@ $ pip install -r requriments.txt
 ```
 
 ### Build dataset
-With generated json label file using sloth, we now need to build a dataset by splitting the dataset into train, dev and test set. Below is the step to build the dataset.
+With generated json label file using sloth, we now need to build a dataset by splitting the dataset into *train*, *dev* and *test set*. Below is the step to build the dataset.
 ```
 $ python build_dataset.py --data_dir <path_to_labels_file> --output <path_to_save_dataset>
 ```
