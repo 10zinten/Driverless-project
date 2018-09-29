@@ -8,28 +8,48 @@
 ![cones annotation](https://i.postimg.cc/sfNqhp95/cones.png)
 
 ### Annotation format
+Dataset is annotated by using [sloth](https://sloth.readthedocs.io/en/latest/), wich is an open source project. It will generate a json label file with every image as a json object. Below is annotations for a sample image, which is a json object.
 ```
-[{'class': 'orange',
-  'height': 35.79507484025583,
-  'type': 'rect',
-  'width': 21.945789931823516,
-  'x': 0.6391977650045684,
-  'y': 8.30957094505939},
- {'class': 'orange',
-  'height': 21.093526245150763,
-  'type': 'rect',
-  'width': 15.979944125114201,
-  'x': 57.74086477207935,
-  'y': 11.292493848414042}]
+{'annotations': [{'class': 'orange',
+                  'height': 35.79507484025583,
+                  'type': 'rect',
+                  'width': 21.945789931823516,
+                  'x': 0.6391977650045684,
+                  'y': 8.30957094505939},
+                          ...
+                          ...
+                 {'class': 'orange',
+                  'height': 21.093526245150763,
+                  'type': 'rect',
+                  'width': 15.979944125114201,
+                  'x': 57.74086477207935,
+                  'y': 11.292493848414042},],
+ 'class': 'image',
+ 'filename': 'dataset-02/1_cam-image_array_.jpg'}
 ```
 
-### Training
+### Set up the environment
 ```
 $ cd ssd-mobilenet
 $ virtualenv env -p python3
 $ source env/bin/activate
 $ pip install -r requriments.txt
-$ python train --model_dir <path_to_experiment> --data_dir <path_to_dataset>
+```
+
+### Build dataset
+With generated json label file using sloth, we now need to build a dataset by splitting the dataset into train, dev and test set. Below is the step to build the dataset.
+```
+$ python build_dataset.py --data_dir <path_to_labels_file> --output <path_to_save_dataset>
+```
+
+### Training
+```
+$ python train.py --model_dir <path_to_experiment> --data_dir <path_to_dataset>
+```
+
+### Evaluate
+```
+$ python evaluate.py --model_dir <path_to_experiment> --data_dir <path_to_dataset>
 ```
 
 ### Detect bounding box on a single image
