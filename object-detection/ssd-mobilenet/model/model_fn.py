@@ -74,7 +74,7 @@ def model_fn(mode, inputs, preset, params, reuse=False):
     model_specs['mobilenet_init_op'] = ssd.load_mobilenet
     model_specs['variable_init_op'] = tf.group(tf.global_variables_initializer(),
                                                tf.local_variables_initializer())
-    model_specs['predictions'] = predictions
+    model_specs['predictions'] = None #predictions
     model_specs['loss'] = loss
     model_specs['result'] = result
     # TODO: add accuracy value
