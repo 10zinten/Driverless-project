@@ -50,7 +50,7 @@ def train_sess(sess, model_specs, num_steps, params, writer):
     metrics_values = {k: v[0] for k, v in metrics.items()}
     metrics_val = sess.run(metrics_values)
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_val.items())
-    logging.info(" - Train metrics: " + metrics_string)
+    logging.info("- Train metrics: " + metrics_string)
 
 
 

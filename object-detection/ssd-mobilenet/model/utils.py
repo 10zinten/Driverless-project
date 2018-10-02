@@ -158,10 +158,6 @@ def get_filenames_and_labels(image_dir, label_dir, split):
                 bb = np.array([cx, cy, w, h])
                 cls = 0 if ann['class'] == "orange" else 1
                 dps_anno[filename].append((bb, cls))
-        else:
-            bb = np.array([])   # for bg
-            cls = 2
-            dps_anno[filename].append((bb, cls))
 
     return list(dps_anno.keys()), list(dps_anno.values())
 

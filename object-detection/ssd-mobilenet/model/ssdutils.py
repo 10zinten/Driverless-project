@@ -91,10 +91,7 @@ def prop2abs(an, img_size):
     """
     Convert prop center-width bounds to absolute min-max bounds.
     """
-    try:
-        x, y, w, h = an[0], an[1], an[2], an[3] # anchors
-    except:
-        return
+    x, y, w, h = an[0], an[1], an[2], an[3] # anchors
     aw = w*img_size.w
     ah = h*img_size.h
     cx = x*img_size.w
@@ -200,7 +197,7 @@ def create_labels(preset, num_samples, num_classes, gts):
         if len(gts[i][0][0]) == 0:
             continue
 
-        for box, _ in gts[i]:
+        for box, cls in gts[i]:
             box_arr = box2array(box, img_size)
             overlaps.append(compute_overlap(box_arr, anchors_arr, 0.5))
 
