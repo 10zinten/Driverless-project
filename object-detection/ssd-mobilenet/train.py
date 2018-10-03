@@ -16,7 +16,7 @@ from model.ssdutils import get_preset_by_name, create_labels
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_dir', default='experiments/test',
+parser.add_argument('--model_dir', default='experiments/base_model',
                     help='Experiment directory containing params.json')
 parser.add_argument('--data_dir', default='dataset/cone',
                     help='Directory containing the dataset')
@@ -33,7 +33,6 @@ if __name__ == "__main__":
     json_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = Params(json_path)
-    print(params)
 
     # Check that we are not overwriting some previous experiment
     model_dir_has_best_weights = os.path.isdir(os.path.join(args.model_dir, "best_weights"))

@@ -159,7 +159,10 @@ def get_filenames_and_labels(image_dir, label_dir, split):
                 cls = 0 if ann['class'] == "orange" else 1
                 dps_anno[filename].append((bb, cls))
 
-    return list(dps_anno.keys()), list(dps_anno.values())
+        filenames = list(dps_anno.keys())
+        labels = list(map(lambda k: dps_anno[k], filenames))
+
+    return filenames, labels
 
 
 def draw_box(img, box):
