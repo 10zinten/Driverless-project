@@ -62,8 +62,6 @@ class SSDMobileNet:
         if self.labels is not None:
             self.__build_loss_function()
 
-    def __init_input(self):
-         pass
 
     def __build_from_mobilenet(self):
         """ Build the model from MobileNet. """
@@ -105,13 +103,16 @@ class SSDMobileNet:
 
     def __select_feature_maps(self):
         self.__maps = [
-            # self.base.conv3_1_pw,
-            # self.base.conv4_1_pw,
-            self.base.conv5_2_pw,
-            self.base.conv6_2_pw,
-            self.ssd_conv7_2,
-            self.ssd_conv8_2
+            self.base.conv3_1_pw,    # 40
+            # self.base.conv4_1_pw,    # 20
+            self.base.conv5_2_pw,    # 10
+            # self.base.conv6_2_pw,    # 5
+            self.ssd_conv7_2,        # 3
+            self.ssd_conv8_2         # 1
         ]
+
+        for fm in self.__maps:
+            print(fm.get_shape())
 
 
     def get_maps(self):

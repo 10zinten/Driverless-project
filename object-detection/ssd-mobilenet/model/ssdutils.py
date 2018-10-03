@@ -13,8 +13,8 @@ SSD_PRESETS = {
     'ssdmobilenet160': SSDPreset(name='mobilenet160',
                               image_size=Size(160, 160),
                               maps = [
-                                  SSDMap(Size(10, 10), 0.1, [2, 1, 0.5, 1./3.]),
-                                  SSDMap(Size( 5,  5), 0.267,  [2, 3, 0.5, 1./3.]),
+                                  SSDMap(Size(40, 40), 0.1, [2, 3, 0.5, 1./3.]),
+                                  SSDMap(Size( 10,  10), 0.267,  [2, 3, 0.5, 1./3.]),
                                   SSDMap(Size( 3,  3), 0.43, [2, 0.5]),
                                   SSDMap(Size( 1,  1), 0.5,   [2, 0.5]),
                               ],
