@@ -13,10 +13,12 @@ SSD_PRESETS = {
     'ssdmobilenet160': SSDPreset(name='mobilenet160',
                               image_size=Size(160, 160),
                               maps = [
-                                  SSDMap(Size(40, 40), 0.1, [2, 3, 0.5, 1./3.]),
-                                  SSDMap(Size( 10,  10), 0.267,  [2, 3, 0.5, 1./3.]),
-                                  SSDMap(Size( 3,  3), 0.43, [2, 0.5]),
-                                  SSDMap(Size( 1,  1), 0.5,   [2, 0.5]),
+                                  SSDMap(Size(40, 40), 0.1, [2, 0.5]),
+                                  SSDMap(Size( 20,  20), 0.267,  [2, 0.5]),
+                                  SSDMap(Size( 10,  10), 0.375,  [2, 0.5]),
+                                  SSDMap(Size( 5,  5), 0.55,  [2, 0.5]),
+                                  SSDMap(Size( 3,  3), 0.725, [2, 0.5]),
+                                  SSDMap(Size( 1,  1), 0.9,   [2, 0.5]),
                               ],
                               extra_scale = 107.5,
                               num_anchors = 790)
@@ -224,7 +226,7 @@ def decode_location(bx, an):
 def tf_decode_boxes(bx, an):
     pass
 
-def decode_boxes(pred, anchors, conf_threshold=0.01, detections_cap=200):
+def decode_boxes(pred, anchors, conf_threshold=0.0, detections_cap=200):
     """
     Decode boxes from the result of ssd.
     """
@@ -322,5 +324,5 @@ def suppress_overlaps(boxes):
         class_boxes[box[1]].append(box)
 
     for cid, box in class_boxes.items():
-        selected_boxes += non_max_suppression(box, 0.45)
+        selected_boxes += non_max_suppression(box, 0.5)
     return selected_boxes
