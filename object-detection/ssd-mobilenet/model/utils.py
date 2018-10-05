@@ -169,7 +169,7 @@ def draw_box(img, box):
     img_size = Size(img.shape[1], img.shape[0])
     xmin, xmax, ymin, ymax = prop2abs(box[2], img_size)
     img_box = np.copy(img)
-    cv2.rectangle(img_box, (xmin, ymin), (xmax, ymax), (1, 1, 1), 2)
+    cv2.rectangle(img_box, (xmin, ymin), (xmax, ymax), (0, 255, 255), 1)
     # cv2.rectangle(img_box, (xmin-1, ymin), (xmax+1, ymin-20), color, cv2.FILLED)
     # font = cv2.FONT_HERSHEY_SIMPLEX
     # cv2.putText(img_box, box.label, (xmin+5, ymin-5), font, 0.5,
