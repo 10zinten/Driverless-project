@@ -72,7 +72,9 @@ class SSDMobileNet:
 
     def __build_ssd_layers(self):
         with tf.variable_scope('ssd_layer'):
-            self.ssd_conv7_1 = conv2d('sdd_conv7_1', self.base.conv6_2_pw,
+            conv6_2_pw_stop = tf.stop_gradient(self.base.conv6_2_pw)
+
+            self.ssd_conv7_1 = conv2d('sdd_conv7_1', conv6_2_pw_stop,
                                     num_filters=256, kernel_size=(1, 1),
                                     padding='SAME', stride=(1, 1), activation=tf.nn.relu,
                                     batchnorm_enabled=self.args.batchnorm_enabled,
@@ -104,15 +106,12 @@ class SSDMobileNet:
     def __select_feature_maps(self):
         self.__maps = [
             self.base.conv3_1_pw,    # 40
-            # self.base.conv4_1_pw,    # 20
+            self.base.conv4_1_pw,    # 20
             self.base.conv5_2_pw,    # 10
-            # self.base.conv6_2_pw,    # 5
+            self.base.conv6_2_pw,    # 5
             self.ssd_conv7_2,        # 3
             self.ssd_conv8_2         # 1
         ]
-
-        for fm in self.__maps:
-            print(fm.get_shape())
 
 
     def get_maps(self):
