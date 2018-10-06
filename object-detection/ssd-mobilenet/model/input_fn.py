@@ -27,6 +27,20 @@ def _preprocess(image, gt, is_training):
         return image, gt
 
 
+def train_preprocess(image, label):
+    """Image preprocessing for training
+
+    Apply the following operations:
+        - Apply random brightness and saturation
+    """
+
+    image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
+    image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+
+    image = tf.clip_by_value(image, 0.0, 1.0)
+
+    return image, label
+
 
 def input_fn(is_training, filenames, labels, args):
     """Input functions for the Cones dataset."""
