@@ -49,6 +49,8 @@ def input_fn(is_training, filenames, labels, args):
     assert len(filenames) > 0, 'Datapoint not found'
 
     parse_fn = lambda f, gt: _parse_function(f, gt)
+    train_fn = lambda f, gt: train_preprocess(f, gt)
+
     train_preprocess_fn = lambda image, gt: _preprocess(image, gt, True)
     eval_preprocess_fn = lambda image, gt: _preprocess(image, gt, False)
 
@@ -56,14 +58,13 @@ def input_fn(is_training, filenames, labels, args):
         dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
             .shuffle(num_samples)
             .map(parse_fn, num_parallel_calls=4)
-            #.map(train_preprocess_fn, num_parallel_calls=4)
+            .map(train_fn, num_parallel_calls=4)
             .batch(args.batch_size)
             .prefetch(1)
         )
     else:
         dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
                .map(parse_fn)
-               # .map(eval_preprocess_fn, num_parallel_calls=4)
                .batch(args.batch_size)
                .prefetch(1)
         )
