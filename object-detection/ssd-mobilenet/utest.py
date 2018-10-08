@@ -10,45 +10,48 @@ from model.ssdmobilenet import SSDMobileNet
 from model.utils import Params
 from model.utils import get_filenames_and_labels
 from model.input_fn import input_fn
+from model.data_gen import TrainingData
 from model.ssdutils import get_preset_by_name, create_labels
 
 
 # Test set up
+model_test = False
 json_path = os.path.join('experiments/base_model', 'params.json')
 params = Params(json_path)
 
-# Create the input data pipeline
-print("Creating the datasets...")
-data_dir = 'dataset/cone/'
-model_dir = 'experiments/base_model/'
-image_dir = os.path.join(data_dir, 'Images')
-label_dir = os.path.join(data_dir, 'Labels')
+if model_test:
+    # Create the input data pipeline
+    print("Creating the datasets...")
+    data_dir = 'dataset/cone/'
+    model_dir = 'experiments/base_model/'
+    image_dir = os.path.join(data_dir, 'Images')
+    label_dir = os.path.join(data_dir, 'Labels')
 
-# get the filenames from the train and dev set
-demo_filenames, demo_labels = get_filenames_and_labels(image_dir, label_dir, 'train')
-# create ssd labels
-params.demo_size = len(demo_filenames)
+    # get the filenames from the train and dev set
+    demo_filenames, demo_labels = get_filenames_and_labels(image_dir, label_dir, 'train')
+    # create ssd labels
+    params.demo_size = len(demo_filenames)
 
-preset = get_preset_by_name('ssdmobilenet160')
-demo_labels = create_labels(preset, params.demo_size, 2, demo_labels)
-print("[INFO] Demo labels Shape:", demo_labels.shape)
-# Create the two iterators over the two datasets
-demo_inputs = input_fn(True, demo_filenames, demo_labels, params)
-iterator_init_op = demo_inputs['iterator_init_op']
+    preset = get_preset_by_name('ssdmobilenet160')
+    demo_labels = create_labels(preset, params.demo_size, 2, demo_labels)
+    print("[INFO] Demo labels Shape:", demo_labels.shape)
+    # Create the two iterators over the two datasets
+    demo_inputs = input_fn(True, demo_filenames, demo_labels, params)
+    iterator_init_op = demo_inputs['iterator_init_op']
 
-sess = tf.Session()
-sess.run(iterator_init_op)
-print("Test image shape", sess.run(demo_inputs['images']).shape)
-print("Test label shape", sess.run(demo_inputs['labels']).shape)
-preset = get_preset_by_name('ssdmobilenet160')
-ssd = SSDMobileNet(True, demo_inputs, preset, params)
-loss = ssd.losses['total']
-optimizer = tf.train.MomentumOptimizer(learning_rate=params.learning_rate,
-                                       momentum=params.momentum)
-train_op = optimizer.minimize(loss)
-init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    sess = tf.Session()
+    sess.run(iterator_init_op)
+    print("Test image shape", sess.run(demo_inputs['images']).shape)
+    print("Test label shape", sess.run(demo_inputs['labels']).shape)
+    preset = get_preset_by_name('ssdmobilenet160')
+    ssd = SSDMobileNet(True, demo_inputs, preset, params)
+    loss = ssd.losses['total']
+    optimizer = tf.train.MomentumOptimizer(learning_rate=params.learning_rate,
+                                        momentum=params.momentum)
+    train_op = optimizer.minimize(loss)
+    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 
-sess.run([init, iterator_init_op])
+    sess.run([init, iterator_init_op])
 
 
 def test_frame(f):
@@ -123,14 +126,14 @@ def test_feature_map_shape():
         assert fmap.get_shape().as_list() == expected_shapes[i], "Shape not matching for {}".format(fmap.name)
 
 def test_ssd_confidence_loss():
-    conf_loss = sess.run(ssd.confidence_loss) #, feed_dict=feed_dict)
+    conf_loss = sess.run(ssd.confidence_loss)
     print(" - Confidence loss:", conf_loss)
 
     assert conf_loss >= 0.0, "Not expected Confidence loss"
 
 def test_ssd_localization_loss():
     # feed_dict = sample_single_datapoint()
-    loc_loss = sess.run(ssd.localization_loss) #, feed_dict=feed_dict)
+    loc_loss = sess.run(ssd.localization_loss)
     print(" - Localization loss:", loc_loss)
 
     assert loc_loss >= 0.0, "Not expected Localization loss"
@@ -138,7 +141,7 @@ def test_ssd_localization_loss():
 def test_final_loss():
     # feed_dict = sample_single_datapoint()
     data_loss, reg_loss, loss = sess.run([ssd.data_loss, ssd.reg_loss, ssd.loss])
-                                         # feed_dict=feed_dict)
+
     print(' - Data loss:', data_loss)
     print(' - Regularization loss:', reg_loss)
     print(' - Final loss:', loss)
@@ -147,15 +150,14 @@ def test_final_loss():
 
 def test_ssd_optimizer():
 
-    # feed_dict = sample_single_datapoint()
     sess.run(iterator_init_op)
-    loss_i = sess.run(loss) #, feed_dict=feed_dict)
+    loss_i = sess.run(loss)
     print(" - Initial loss:", loss_i)
 
     for _ in range(10):
-        _ = sess.run(train_op) #, feed_dict=feed_dict)
+        _ = sess.run(train_op)
 
-    loss_o = sess.run(loss) #, feed_dict=feed_dict)
+    loss_o = sess.run(loss)
     print(" - Optimized loss:", loss_o)
 
     assert loss_i != loss_o, "Optimizer is not updating the weights"
@@ -177,12 +179,24 @@ def test_ssd_label_create(n_samples=3):
 
     assert labels.shape == (n_samples, 790, 7)
 
-if __name__ == "__main__":
+def test_data_gen():
+    data = 'dataset/cone/train_dev'
+    images_dir = os.path.join(data, 'Images')
+    labels_dir = os.path.join(data, 'Labels')
+    td = TrainingData(images_dir, labels_dir, None)
+    for i, sample in enumerate(td.train_generator(params.batch_size)):
+        if i+1 < params.batch_size: # last batch is exception
+            assert len(sample[0]) == params.batch_size, "Expected batch did not match"
+            assert len(sample[1]) == params.batch_size, "Expected batch did not match"
+            assert len(sample[2]) == params.batch_size, "Expected batch did not match"
 
-    test_frame(test_basenetwork_feedforward)
-    test_frame(test_feature_map_shape)
-    test_frame(test_ssd_confidence_loss)
-    test_frame(test_ssd_localization_loss)
-    test_frame(test_final_loss)
-    test_frame(test_ssd_optimizer)
-    test_frame(test_ssd_label_create)
+if __name__ == "__main__":
+    if model_test:
+        test_frame(test_basenetwork_feedforward)
+        test_frame(test_feature_map_shape)
+        test_frame(test_ssd_confidence_loss)
+        test_frame(test_ssd_localization_loss)
+        test_frame(test_final_loss)
+        test_frame(test_ssd_optimizer)
+        test_frame(test_ssd_label_create)
+    test_frame(test_data_gen)
