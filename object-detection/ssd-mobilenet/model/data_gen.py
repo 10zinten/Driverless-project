@@ -12,7 +12,7 @@ from model.utils import get_filenames_and_labels
 class Transform:
     def __init__(self, **kwargs):
         for arg, val in kwargs.items():
-            setattar(self, arg, val)
+            setattr(self, arg, val)
         self.initialized = False
 
 class ImageLoaderTransform(Transform):
@@ -22,10 +22,43 @@ class ImageLoaderTransform(Transform):
     def __call__(self, filename, label, gt):
         return cv2.imread(filename), label, gt
 
+class BrightnessTransform(Transform):
+    """
+    Transforms the image brightness
+    Parameters: delta
+    """
+    def __call__(self, data, label, gt):
+        data = data.astype(np.float32)
+        delta = random.randint(-self.delta, self.delta)
+        data += delta
+        data[data > 255] = 255
+        data[data < 0] = 0
+        data = data.astype(np.uint8)
+        return data, label, gt
+
+class RandomTransform(Transform):
+    """
+    Call another transfrom with a given probability
+    Parameters: prob, transform
+    """
+    def __call__(self, data, label, gt):
+        p  = random.uniform(0, 1)
+        if p < self.prob:
+            return self.transform(data, label, gt)
+        return data, label, gt
+
+
+
 def build_transforms(data):
+
+    # Image distortions
+    brightness = BrightnessTransform(delta=32)
+    rnd_brightness = RandomTransform(prob=0.5, transform=brightness)
+
     if data == 'train':
         transforms = [
-                ImageLoaderTransform()
+                ImageLoaderTransform(),
+                rnd_brightness
             ]
     else:
         transforms = [
@@ -62,6 +95,7 @@ class TrainingData:
             args = sample
             for transform in transforms:
                 args = transform(*args)
+
             return args
 
         def process_samples(samples):
