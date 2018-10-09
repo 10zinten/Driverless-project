@@ -97,6 +97,16 @@ class SaturationTransform(Transform):
     def __repr__(self):
         return "Saturation Transform"
 
+class ChannelsReorderTransform(Transform):
+    def __call__(self, data, label, gt):
+        channels = [0, 1, 2]
+        random.shuffle(channels)
+        return data[:, :, channels], label, gt
+
+    def __repr__(self):
+        return "Channels Reorder Transform"
+
+
 class RandomTransform(Transform):
     """
     Call another transfrom with a given probability
@@ -127,6 +137,8 @@ def build_transforms(data):
     saturation = SaturationTransform(lower=0.5, upper=1.8)
     random_saturation = RandomTransform(prob=0.5, transform=saturation)
 
+    channels_reorder = ChannelsReorderTransform()
+    random_channels_reorder = RandomTransform(prob=0.5, transform=channels_reorder)
 
     if data == 'train':
         transforms = [
@@ -135,6 +147,7 @@ def build_transforms(data):
                 random_constrast,
                 random_hue,
                 random_saturation,
+                random_channels_reorder,
             ]
     else:
         transforms = [
