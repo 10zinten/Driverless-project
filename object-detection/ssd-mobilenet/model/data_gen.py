@@ -78,6 +78,24 @@ class HueTransform(Transform):
     def __repr__(self):
         return "Hue Transform"
 
+class SaturationTransform(Transform):
+    """
+    Transform saturation
+    Parameters: lower, upper
+    """
+    def __call__(self, data, label, gt):
+        data = cv2.cvtColor(data, cv2.COLOR_BGR2HSV)
+        data = data.astype(np.float32)
+        delta = random.uniform(self.lower, self.upper)
+        data[1] *= delta
+        data[1][data[1]>180] -= 180
+        data[1][data[1]<0] +=180
+        data = data.astype(np.uint8)
+        data = cv2.cvtColor(data, cv2.COLOR_HSV2BGR)
+        return data, label, gt
+
+    def __repr__(self):
+        return "Saturation Transform"
 
 class RandomTransform(Transform):
     """
@@ -106,12 +124,17 @@ def build_transforms(data):
     hue = HueTransform(delta=100)
     random_hue = RandomTransform(prob=0.5, transform=hue)
 
+    saturation = SaturationTransform(lower=0.5, upper=1.8)
+    random_saturation = RandomTransform(prob=0.5, transform=saturation)
+
+
     if data == 'train':
         transforms = [
                 ImageLoaderTransform(),
                 random_brightness,
                 random_constrast,
                 random_hue,
+                random_saturation,
             ]
     else:
         transforms = [
