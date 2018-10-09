@@ -22,6 +22,9 @@ class ImageLoaderTransform(Transform):
     def __call__(self, filename, label, gt):
         return cv2.imread(filename), label, gt
 
+    def __repr__(self):
+        return "ImageLoader Transform"
+
 class BrightnessTransform(Transform):
     """
     Transforms the image brightness
@@ -36,6 +39,26 @@ class BrightnessTransform(Transform):
         data = data.astype(np.uint8)
         return data, label, gt
 
+    def __repr__(self):
+        return "Brightness Transform"
+
+class ConstrastTransform(Transform):
+    """
+    Transform image constrast
+    Parameters: lower, upper
+    """
+    def __call__(self, data, label, gt):
+        data = data.astype(np.float32)
+        delta = random.uniform(self.lower, self.upper)
+        data *= delta
+        data[data > 255] = 255
+        data[data < 0] = 0
+        data = data.astype(np.uint8)
+        return data, label, gt
+
+    def __repr__(self):
+        return "Constrast Transform"
+
 class RandomTransform(Transform):
     """
     Call another transfrom with a given probability
@@ -47,18 +70,24 @@ class RandomTransform(Transform):
             return self.transform(data, label, gt)
         return data, label, gt
 
+    def __repr__(self):
+        return repr(self.transform)
 
 
 def build_transforms(data):
 
     # Image distortions
     brightness = BrightnessTransform(delta=32)
-    rnd_brightness = RandomTransform(prob=0.5, transform=brightness)
+    random_brightness = RandomTransform(prob=0.5, transform=brightness)
+
+    constrast = ConstrastTransform(lower=0.5, upper=1.5)
+    random_constrast = RandomTransform(prob=0.5, transform=constrast)
 
     if data == 'train':
         transforms = [
                 ImageLoaderTransform(),
-                rnd_brightness
+                random_brightness,
+                random_constrast,
             ]
     else:
         transforms = [
@@ -118,6 +147,10 @@ class TrainingData:
             for offset in range(0, len(all_samples), batch_size):
                 samples = all_samples[offset: offset + batch_size]
                 images, labels, gt_boxes = process_samples(samples)
+
+                for transform in transforms:
+                    print("[INFO] {} applied ... ok".format(transform))
+
                 yield images, labels, gt_boxes
 
         return gen_batch
