@@ -59,6 +59,26 @@ class ConstrastTransform(Transform):
     def __repr__(self):
         return "Constrast Transform"
 
+class HueTransform(Transform):
+    """
+    Transform hue
+    Parameters: delta
+    """
+    def __call__(self, data, label, gt):
+        data = cv2.cvtColor(data, cv2.COLOR_BGR2HSV)
+        data = data.astype(np.float32)
+        delta = random.randint(-self.delta, self.delta)
+        data[0] += delta
+        data[0][data[0] > 180] -= 180
+        data[0][data[0] < 0] += 180
+        data = data.astype(np.uint8)
+        data = cv2.cvtColor(data, cv2.COLOR_HSV2BGR)
+        return data, label, gt
+
+    def __repr__(self):
+        return "Hue Transform"
+
+
 class RandomTransform(Transform):
     """
     Call another transfrom with a given probability
@@ -77,17 +97,21 @@ class RandomTransform(Transform):
 def build_transforms(data):
 
     # Image distortions
-    brightness = BrightnessTransform(delta=32)
+    brightness = BrightnessTransform(delta=100)
     random_brightness = RandomTransform(prob=0.5, transform=brightness)
 
-    constrast = ConstrastTransform(lower=0.5, upper=1.5)
+    constrast = ConstrastTransform(lower=0.5, upper=1.8)
     random_constrast = RandomTransform(prob=0.5, transform=constrast)
+
+    hue = HueTransform(delta=100)
+    random_hue = RandomTransform(prob=0.5, transform=hue)
 
     if data == 'train':
         transforms = [
                 ImageLoaderTransform(),
                 random_brightness,
                 random_constrast,
+                random_hue,
             ]
     else:
         transforms = [
