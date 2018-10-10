@@ -121,6 +121,28 @@ class RandomTransform(Transform):
     def __repr__(self):
         return repr(self.transform)
 
+class ComposeTransform(Transform):
+    """
+    call a bunch of transforms serially
+    Parametes: transforms
+    """
+    def __call__(self, data, label, gt):
+        args = (data, label, gt)
+        for transform in self.transforms:
+            args = transform(*args)
+        return args
+
+class TransformPickerTransform(Transform):
+    """
+    Call a randomly chosen transform from the list
+    Parameters: transforms
+    """
+    def __call__(self, data, label, gt):
+        self.pick = random.randint(0, len(self.transforms)-1)
+        return self.transforms[self.pick](data, label, gt)
+
+    def __repr__(self):
+        return repr(self.transforms[self.pick])
 
 def build_transforms(data):
 
@@ -140,14 +162,24 @@ def build_transforms(data):
     channels_reorder = ChannelsReorderTransform()
     random_channels_reorder = RandomTransform(prob=0.5, transform=channels_reorder)
 
+    # Compositions of image distortions
+    distort_list = [
+        random_constrast,
+        random_hue,
+        random_saturation,
+    ]
+
+    distort_1 = ComposeTransform(transforms=distort_list[:-1])
+    distort_2 = ComposeTransform(transforms=distort_list[1:])
+    distort_comp = [distort_1, distort_2]
+    distort = TransformPickerTransform(transforms=distort_comp)
+
     if data == 'train':
         transforms = [
                 ImageLoaderTransform(),
                 random_brightness,
-                random_constrast,
-                random_hue,
-                random_saturation,
-                random_channels_reorder,
+                distort,
+                random_channels_reorder
             ]
     else:
         transforms = [
