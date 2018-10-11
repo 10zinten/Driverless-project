@@ -25,6 +25,9 @@ class ImageLoaderTransform(Transform):
     def __repr__(self):
         return "ImageLoader Transform"
 
+###############################################################################
+#                          Photometric Distortions                            #
+###############################################################################
 class BrightnessTransform(Transform):
     """
     Transforms the image brightness
@@ -106,6 +109,24 @@ class ChannelsReorderTransform(Transform):
     def __repr__(self):
         return "Channels Reorder Transform"
 
+###############################################################################
+#                          Geometric Distortions                              #
+###############################################################################
+class HorizontalFlip(Transform):
+    """
+    Tranfrom the image and bboxes with horizontal flip
+    """
+    def __call__(self, image, label, gt):
+        img_center = np.array(image.shape[: 2])[::-1] / 2
+        img_center = np.hstack((img_center, img_center)).astype(np.uint8)
+        image = image[:, ::-1, :]
+        gt[:, [0, 1]] += 2*(img_center[[0, 1]] - gt[:, [0, 1]])
+
+        return image, label, gt
+
+    def __repr__(self):
+        return "Horzontal Filp"
+
 
 class RandomTransform(Transform):
     """
@@ -146,7 +167,7 @@ class TransformPickerTransform(Transform):
 
 def build_transforms(data):
 
-    # Image distortions
+    ####  Photomatic Distortions  ###
     brightness = BrightnessTransform(delta=100)
     random_brightness = RandomTransform(prob=0.5, transform=brightness)
 
@@ -160,7 +181,7 @@ def build_transforms(data):
     random_saturation = RandomTransform(prob=0.5, transform=saturation)
 
     channels_reorder = ChannelsReorderTransform()
-    random_channels_reorder = RandomTransform(prob=0.5, transform=channels_reorder)
+    random_channels_reorder = RandomTransform(prob=0.3, transform=channels_reorder)
 
     # Compositions of image distortions
     distort_list = [
@@ -174,12 +195,18 @@ def build_transforms(data):
     distort_comp = [distort_1, distort_2]
     distort = TransformPickerTransform(transforms=distort_comp)
 
+    ### Geometric Distortions ###
+    horizontal_flip = HorizontalFlip()
+    random_horizontal_flip = RandomTransform(prob=0.5, transform=horizontal_flip)
+
+
     if data == 'train':
         transforms = [
                 ImageLoaderTransform(),
                 random_brightness,
                 distort,
-                random_channels_reorder
+                random_channels_reorder,
+                random_horizontal_flip,
             ]
     else:
         transforms = [
