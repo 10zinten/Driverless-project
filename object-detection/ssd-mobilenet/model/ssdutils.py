@@ -169,7 +169,7 @@ def create_labels(preset, num_samples, num_classes, gts):
         idx: index of overlapped anchor
         score: socre of overlapped acnhor
         """
-        box, label = gt
+        box, label = gt[:-1], gt[-1]
         if idx in matches and matches[idx] >= score:
             return
 
@@ -195,12 +195,8 @@ def create_labels(preset, num_samples, num_classes, gts):
     # Jaccard overlap
     overlaps = []
     for i in range(num_samples):
-        # avoid the image with no objects, bbox is empty array
-        if len(gts[i][0][0]) == 0:
-            continue
-
-        for box, cls in gts[i]:
-            box_arr = box2array(box, img_size)
+        for box in gts[i]:
+            box_arr = box2array(box[:-1], img_size)
             overlaps.append(compute_overlap(box_arr, anchors_arr, 0.5))
 
         matches = {}
@@ -226,7 +222,7 @@ def decode_location(bx, an):
 def tf_decode_boxes(bx, an):
     pass
 
-def decode_boxes(pred, anchors, conf_threshold=0.0, detections_cap=200):
+def decode_boxes(pred, anchors, conf_threshold=0.5, detections_cap=200):
     """
     Decode boxes from the result of ssd.
     """
@@ -234,11 +230,11 @@ def decode_boxes(pred, anchors, conf_threshold=0.0, detections_cap=200):
     # Find the detections
     num_classes = pred.shape[1]-4
     bg_class = num_classes-1
-    box_class = np.argmax(pred[:, :num_classes-1], axis=1)
+    box_class = np.argmax(pred[:, :num_classes], axis=1)
     conf = pred[np.arange(len(pred)), box_class]
 
     if detections_cap is not None:
-        detections = np.argsort(conf)[::-1][:detectionscap]
+        detections = np.argsort(conf)[::-1][:detections_cap]
     else:
         detections = np.argsort(conf)[::-1]
 
@@ -246,9 +242,10 @@ def decode_boxes(pred, anchors, conf_threshold=0.0, detections_cap=200):
     boxes = []
     for idx in detections:
         conf = pred[idx, box_class[idx]]
-        if conf < conf_threshold:
-            break
+        if conf < conf_threshold or box_class[idx] == 2: # ignore bg anchor box
+            continue
 
+        print(conf, box_class[idx])
         box = decode_location(pred[idx, num_classes:], anchors[idx])
         cid = box_class[idx]
         boxes.append((conf, cid, box))
@@ -324,5 +321,5 @@ def suppress_overlaps(boxes):
         class_boxes[box[1]].append(box)
 
     for cid, box in class_boxes.items():
-        selected_boxes += non_max_suppression(box, 0.5)
+        selected_boxes += non_max_suppression(box, 0.0)
     return selected_boxes
