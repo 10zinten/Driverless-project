@@ -125,7 +125,7 @@ class HorizontalFlip(Transform):
         return image, label, gt
 
     def __repr__(self):
-        return "Horzontal Filp"
+        return "Horizontal Filp"
 
 
 class RandomTransform(Transform):
