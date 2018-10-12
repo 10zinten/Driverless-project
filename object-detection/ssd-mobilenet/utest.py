@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import traceback
@@ -15,14 +16,19 @@ from model.ssdutils import get_preset_by_name, create_labels
 
 
 # Test set up
-model_test = False
 json_path = os.path.join('experiments/base_model', 'params.json')
 params = Params(json_path)
 
-if model_test:
+parser = argparse.ArgumentParser()
+parser.add_argument('--test_model', action='store_true',
+                            help='Boolean to test model')
+
+args = parser.parse_args()
+
+if args.test_model:
     # Create the input data pipeline
     print("Creating the datasets...")
-    data_dir = 'dataset/cone/'
+    data_dir = 'dataset/cone/train_dev'
     model_dir = 'experiments/base_model/'
     image_dir = os.path.join(data_dir, 'Images')
     label_dir = os.path.join(data_dir, 'Labels')
@@ -108,13 +114,15 @@ def sample_single_datapoint():
 # test the base network feedforward
 def test_basenetwork_feedforward():
     out = sess.run(ssd.base.conv6_2_pw)
-    print("last conv: ", out.shape)
+    print("Mobilenet last conv: ", out.shape)
 
     assert out.shape == (params.batch_size, 5, 5, 1024), "base network out shape not matched"
 
 # test the feature maps shape
 def test_feature_map_shape():
     expected_shapes = [
+        [None, 40, 40, 128],
+        [None, 20, 20, 256],
         [None, 10, 10, 512],
         [None, 5, 5, 1024],
         [None, 3, 3, 512],
@@ -154,7 +162,7 @@ def test_ssd_optimizer():
     loss_i = sess.run(loss)
     print(" - Initial loss:", loss_i)
 
-    for _ in range(10):
+    for _ in range(5):
         _ = sess.run(train_op)
 
     loss_o = sess.run(loss)
@@ -166,18 +174,23 @@ def test_ssd_label_create(n_samples=3):
 
     # Create sysnthetic gt_box
     np.random.seed(seed=40)
-    gt = []
+    gts = []
     for _ in range(n_samples):
+        gt = []
         boxes = np.random.rand(3, 4)
         cls = [0, 1, 0]
-        gt.append(list(zip(boxes, cls)))
+        for i in range(3):
+            b = list(boxes[i])
+            b.append(cls[i])
+            gt.append(b)
+        gts.append(np.array(gt).astype(np.uint8))
 
-    labels = create_labels(preset, n_samples, 2, gt)
+    labels = create_labels(preset, n_samples, 2, gts)
 
     print(" - Number of samples:", n_samples)
     print(" - Labels shape:", labels.shape)
 
-    assert labels.shape == (n_samples, 790, 7)
+    assert labels.shape == (n_samples, 8540, 7), "Unexpected labels shape"
 
 def test_data_gen():
     data = 'dataset/cone/train_dev'
@@ -191,7 +204,11 @@ def test_data_gen():
             assert len(sample[2]) == params.batch_size, "Expected batch did not match"
 
 if __name__ == "__main__":
-    if model_test:
+    print("#####################################################################")
+    print("#                        TEST CASES                                 #")
+    print("#####################################################################")
+
+    if args.test_model:
         test_frame(test_basenetwork_feedforward)
         test_frame(test_feature_map_shape)
         test_frame(test_ssd_confidence_loss)
