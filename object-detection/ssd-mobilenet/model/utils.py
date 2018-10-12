@@ -154,13 +154,13 @@ def get_filenames_and_labels(image_dir, label_dir, split):
         filename = os.path.join(image_dir, dp['filename'])
         if dp['annotations']:
             for ann in dp['annotations']:
-                cx, cy, w, h = abs2prop(ann['xmin'], ann['xmax'], ann['ymin'], ann['ymax'], img_size)
-                bb = np.array([cx, cy, w, h])
+                xmin, xmax, ymin, ymax = ann['xmin'], ann['xmax'], ann['ymin'], ann['ymax']
                 cls = 0 if ann['class'] == "orange" else 1
-                dps_anno[filename].append((bb, cls))
+                gt = [xmin, xmax, ymin, ymax, cls]
+                dps_anno[filename].append(gt)
 
         filenames = list(dps_anno.keys())
-        labels = list(map(lambda k: dps_anno[k], filenames))
+        labels = list(map(lambda k: np.array(dps_anno[k]), filenames))
 
     return filenames, labels
 
