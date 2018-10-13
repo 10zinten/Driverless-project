@@ -110,6 +110,12 @@ def anchors2array(anchors, img_size):
     arr = np.zeros((anchors.shape))
     for i, anchor in enumerate(anchors):
         xmin, xmax, ymin, ymax = prop2abs(anchor, img_size)
+        # Clip the anchor box in to the image size
+        xmin = np.maximum(0, xmin)
+        xmax = np.minimum(img_size.w, xmax)
+        ymin = np.maximum(0, ymin)
+        ymax = np.minimum(img_size.h, ymax)
+
         arr[i] = np.array([xmin, xmax, ymin, ymax])
 
     return arr
@@ -163,13 +169,18 @@ def create_labels(preset, num_samples, num_classes, gts):
     Shape: (num_anchors, num_classes+5)
     """
 
-    def __process_overlap(dp_id, idx, score, gt, anchor, matches, num_classes):
+    def __process_overlap(dp_id, idx, score, gt, anchor, matches, num_classes, img_size):
         """
         i: datapoint id
         idx: index of overlapped anchor
         score: socre of overlapped acnhor
         """
         box, label = gt[:-1], gt[-1]
+
+        # Covert abs to prop
+        box = abs2prop(*box, img_size)
+        anchor = abs2prop(*anchor, img_size)
+
         if idx in matches and matches[idx] >= score:
             return
 
@@ -196,15 +207,15 @@ def create_labels(preset, num_samples, num_classes, gts):
     overlaps = []
     for i in range(num_samples):
         for box in gts[i]:
-            box_arr = box2array(box[:-1], img_size)
-            overlaps.append(compute_overlap(box_arr, anchors_arr, 0.5))
+            # box_arr = box2array(box[:-1], img_size)
+            overlaps.append(compute_overlap(box[:-1], anchors_arr, 0.5))
 
         matches = {}
         for j, gt in enumerate(gts[i]):
             idxs, scores = overlaps[j]
             for idx, score in zip(idxs, scores):
-                anchor = anchors[idx]
-                __process_overlap(i, idx, score, gt, anchor, matches, num_classes)
+                anchor = anchors_arr[idx]
+                __process_overlap(i, idx, score, gt, anchor, matches, num_classes, img_size)
 
     return labels
 
