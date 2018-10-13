@@ -18,6 +18,7 @@ from model.ssdutils import get_preset_by_name, create_labels
 # Test set up
 json_path = os.path.join('experiments/base_model', 'params.json')
 params = Params(json_path)
+preset = get_preset_by_name('ssdmobilenet160')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--test_model', action='store_true',
@@ -38,7 +39,6 @@ if args.test_model:
     # create ssd labels
     params.demo_size = len(demo_filenames)
 
-    preset = get_preset_by_name('ssdmobilenet160')
     demo_labels = create_labels(preset, params.demo_size, 2, demo_labels)
     print("[INFO] Demo labels Shape:", demo_labels.shape)
     # Create the two iterators over the two datasets
@@ -201,12 +201,12 @@ def test_data_gen():
         if i+1 < params.batch_size: # last batch is exception
             assert len(sample[0]) == params.batch_size, "Expected batch did not match"
             assert len(sample[1]) == params.batch_size, "Expected batch did not match"
-            assert len(sample[2]) == params.batch_size, "Expected batch did not match"
 
 if __name__ == "__main__":
     print("#####################################################################")
     print("#                        TEST CASES                                 #")
     print("#####################################################################")
+
 
     if args.test_model:
         test_frame(test_basenetwork_feedforward)
@@ -215,5 +215,5 @@ if __name__ == "__main__":
         test_frame(test_ssd_localization_loss)
         test_frame(test_final_loss)
         test_frame(test_ssd_optimizer)
-        test_frame(test_ssd_label_create)
+    test_frame(test_ssd_label_create)
     test_frame(test_data_gen)
