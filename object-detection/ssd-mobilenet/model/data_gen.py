@@ -9,7 +9,7 @@ import numpy as np
 
 from model.utils import get_filenames_and_labels
 from model.ssdutils import get_anchors_for_preset, get_preset_by_name, anchors2array
-from model.ssdutils import box2array, compute_overlap, compute_location
+from model.ssdutils import box2array, abs2prop, compute_overlap, compute_location
 
 
 preset = get_preset_by_name('ssdmobilenet160')
@@ -175,13 +175,18 @@ class TransformPickerTransform(Transform):
 #                     Label Creator Transform                                 #
 ###############################################################################
 
-def process_overlap(idx, score, gt, anchor, vec, matches, num_classes):
+def process_overlap(idx, score, gt, anchor, vec, matches, num_classes, img_size):
     """
     i: datapoint id
     idx: index of overlapped anchor
     score: socre of overlapped acnhor
     """
     box, label = gt[:-1], gt[-1]
+
+    # Covert abs to prop
+    box = abs2prop(*box, img_size)
+    anchor = abs2prop(*anchor, img_size)
+
     if idx in matches and matches[idx] >= score:
         return
 
@@ -214,16 +219,15 @@ class LabelCreatorTransform(Transform):
 
         overlaps = []
         for box in gt:
-            box_arr = box2array(box[:-1], self.img_size)
-            overlaps.append(compute_overlap(box_arr, self.anchors_arr, 0.1))
-        print(overlaps)
+            overlaps.append(compute_overlap(box[:-1], self.anchors_arr, 0.5))
 
         matches = {}
         for j, gt in enumerate(gt):
             idxs, scores = overlaps[j]
             for idx, score in zip(idxs, scores):
-                anchor = self.anchors[idx]
-                process_overlap(idx, score, gt, anchor, vec, matches, self.num_classes)
+                anchor = self.anchors_arr[idx]
+                process_overlap(idx, score, gt, anchor, vec, matches,
+                        self.num_classes, self.img_size)
 
         return data, vec, gt
 
