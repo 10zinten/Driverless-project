@@ -29,6 +29,7 @@ def make_numeraical_stable(n):
 
 def hw_bb(bb):
     return bb[0], bb[1], bb[0]+bb[2]-1, bb[1]+bb[3]-1
+
 def process_ann(dp):
     for ann in dp['annotations']:
         xmin, ymin, xmax, ymax = hw_bb([ann['x'], ann['y'], ann['width'], ann['height']])

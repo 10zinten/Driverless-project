@@ -18,7 +18,7 @@ from model.ssdutils import get_preset_by_name, create_labels
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help='Experiment directory containing params.json')
-parser.add_argument('--data_dir', default='dataset/cone',
+parser.add_argument('--data_dir', default='dataset/cone/train_dev',
                     help='Directory containing the dataset')
 parser.add_argument('--restore_from', default=None,
                     help="optional, directory or file containing weights to reload before training")
