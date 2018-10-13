@@ -206,7 +206,7 @@ class LabelCreatorTransform(Transform):
         self.anchors_arr = anchors2array(self.anchors, self.img_size)
         self.initialized = True
 
-    def __call__(self, data, label, gt):
+    def __call__(self, data, label, gts):
         if not self.initialized:
             self.initialize()
 
@@ -218,18 +218,18 @@ class LabelCreatorTransform(Transform):
         vec[:, self.num_classes+4] = 0  # log height scale
 
         overlaps = []
-        for box in gt:
+        for box in gts:
             overlaps.append(compute_overlap(box[:-1], self.anchors_arr, 0.5))
 
         matches = {}
-        for j, gt in enumerate(gt):
+        for j, gt in enumerate(gts):
             idxs, scores = overlaps[j]
             for idx, score in zip(idxs, scores):
                 anchor = self.anchors_arr[idx]
                 process_overlap(idx, score, gt, anchor, vec, matches,
                         self.num_classes, self.img_size)
 
-        return data, vec, gt
+        return data, vec, gts
 
     def __repr__(self):
         return "Label Creator Transform"
@@ -300,7 +300,6 @@ class TrainingData:
         nones = [None] * len(val_filenames)
         val_samples = list(zip(val_filenames, nones, val_label))
 
-
         self.preset = preset = get_preset_by_name('ssdmobilenet160')
         self.num_classes = 2
         self.train_tfs = build_train_transforms(self.preset, self.num_classes)
@@ -322,16 +321,16 @@ class TrainingData:
             return args
 
         def process_samples(samples):
-            images, labels, gt_boxes = [], [], []
+            images, labels, = [], []
             for sample in samples:
-                image, label, gt = run_transforms(sample)
+                image, label, _ = run_transforms(sample)
                 images.append(image.astype(np.float32))
                 labels.append(label)
-                gt_boxes.append(gt)
 
             images = np.array(images, dtype=np.float32)
+            labels = np.array(labels, dtype=np.float32)
 
-            return images, labels, gt_boxes
+            return images, labels
 
 
         def gen_batch(batch_size):
@@ -340,12 +339,12 @@ class TrainingData:
 
             for offset in range(0, len(all_samples), batch_size):
                 samples = all_samples[offset: offset + batch_size]
-                images, labels, gt_boxes = process_samples(samples)
+                images, labels = process_samples(samples)
 
-                for transform in transforms:
-                    print("[INFO] {} applied ... ok".format(transform))
-                print()
+                # for transform in transforms:
+                #     print("[INFO] {} applied ... ok".format(transform))
+                # print()
 
-                yield images, labels, gt_boxes
+                yield images, labels
 
         return gen_batch
