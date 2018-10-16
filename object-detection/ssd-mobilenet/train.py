@@ -9,10 +9,9 @@ import numpy as np
 from model.model_fn import model_fn
 from model.input_fn import input_fn
 from model.training import train_and_evaluate
-from model.utils import get_filenames_and_labels
 from model.utils import Params
 from model.utils import set_logger
-from model.ssdutils import get_preset_by_name, create_labels
+from model.ssdutils import get_preset_by_name
 
 
 parser = argparse.ArgumentParser()
@@ -49,27 +48,13 @@ if __name__ == "__main__":
     image_dir = os.path.join(data_dir, 'Images')
     label_dir = os.path.join(data_dir, 'Labels')
 
-    # get the filenames from the train and dev set
-    train_filenames, train_labels = get_filenames_and_labels(image_dir, label_dir, 'train')
-    dev_filenames, dev_labels = get_filenames_and_labels(image_dir, label_dir, 'dev')
-
-    # create ssd labels
-    params.train_size = len(train_filenames)
-    params.eval_size = len(dev_filenames)
-
-    preset = get_preset_by_name('ssdmobilenet160')
-    train_labels = create_labels(preset, params.train_size, 2, train_labels)
-    dev_labels = create_labels(preset, params.eval_size, 2, dev_labels)
-
-    print("[INFO] Train labels Shape:", train_labels.shape)
-    print("[INFO] Dev labels Shape:", dev_labels.shape)
-
     # Create the two iterators over the two datasets
-    train_inputs = input_fn(True, train_filenames, train_labels, params)
-    eval_inputs = input_fn(False, dev_filenames, dev_labels, params)
+    train_inputs = input_fn(True, image_dir, label_dir, params)
+    eval_inputs = input_fn(False, image_dir, label_dir,  params)
 
     # Define the model
     logging.info("Creating the model...")
+    preset = get_preset_by_name('ssdmobilenet160')
     train_model_specs = model_fn('train', train_inputs, preset, params)
     eval_model_specs = model_fn('eval', eval_inputs, preset, params, reuse=True)
 

@@ -292,7 +292,7 @@ def build_val_transforms(preset, num_classes):
 
 class TrainingData:
 
-    def __init__(self, image_dir, label_dir, param):
+    def __init__(self, image_dir, label_dir, params):
         train_filenames, train_label = get_filenames_and_labels(image_dir, label_dir, 'train')
         nones = [None] * len(train_filenames)
         train_samples = list(zip(train_filenames, nones, train_label))
@@ -307,9 +307,12 @@ class TrainingData:
         self.train_generator  = self.__build_generator(train_samples, self.train_tfs)
         self.val_generator    = self.__build_generator(val_samples, self.val_tfs)
         self.num_train = len(train_samples)
+        params.train_size = self.num_train
         self.num_val = len(val_samples)
+        params.eval_size = self.num_val
         self.train_samples = list(zip(train_filenames, train_label))
         self.val_samples = list(zip(val_filenames, val_label))
+        self.params = params
 
     def __build_generator(self, all_samples_, transforms):
 
@@ -333,12 +336,12 @@ class TrainingData:
             return images, labels
 
 
-        def gen_batch(batch_size):
+        def gen_batch():
             all_samples = copy(all_samples_)
             random.shuffle(all_samples)
 
-            for offset in range(0, len(all_samples), batch_size):
-                samples = all_samples[offset: offset + batch_size]
+            for offset in range(0, len(all_samples), self.params.batch_size):
+                samples = all_samples[offset: offset + self.params.batch_size]
                 images, labels = process_samples(samples)
 
                 # for transform in transforms:
