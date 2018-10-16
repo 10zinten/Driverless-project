@@ -1,0 +1,19 @@
+{
+  "learning_rate": 1e-2,
+  "batch_size": 12,
+  "num_epochs": 10,
+
+  "batchnorm_enabled": true,
+  "momentum": 0.9,
+  "dropout_keep_prob": 0.80,
+
+  "width_multiplier": 1.0,
+  "l2_strength": 4e-3,
+  "bias": 0.0,
+
+  "img_size": 160,
+  "save_summary_step": 1,
+  "num_classes": 2,
+
+  "pretrained_path": "pretrained_weights/mobilenet_v1.pkl"
+}
