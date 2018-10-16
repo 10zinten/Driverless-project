@@ -300,7 +300,6 @@ class TrainingData:
         nones = [None] * len(val_filenames)
         val_samples = list(zip(val_filenames, nones, val_label))
 
-        self.params = params
         self.preset = preset = get_preset_by_name('ssdmobilenet160')
         self.num_classes = 2
         self.train_tfs = build_train_transforms(self.preset, self.num_classes)
@@ -308,9 +307,12 @@ class TrainingData:
         self.train_generator  = self.__build_generator(train_samples, self.train_tfs)
         self.val_generator    = self.__build_generator(val_samples, self.val_tfs)
         self.num_train = len(train_samples)
+        params.train_size = self.num_train
         self.num_val = len(val_samples)
+        params.eval_size = self.num_val
         self.train_samples = list(zip(train_filenames, train_label))
         self.val_samples = list(zip(val_filenames, val_label))
+        self.params = params
 
     def __build_generator(self, all_samples_, transforms):
 
@@ -338,13 +340,13 @@ class TrainingData:
             all_samples = copy(all_samples_)
             random.shuffle(all_samples)
 
-            for offset in range(0, len(all_samples), params.batch_size):
-                samples = all_samples[offset: offset + params.batch_size]
+            for offset in range(0, len(all_samples), self.params.batch_size):
+                samples = all_samples[offset: offset + self.params.batch_size]
                 images, labels = process_samples(samples)
 
-                for transform in transforms:
-                    print("[INFO] {} applied ... ok".format(transform))
-                print()
+                # for transform in transforms:
+                #     print("[INFO] {} applied ... ok".format(transform))
+                # print()
 
                 yield images, labels
 

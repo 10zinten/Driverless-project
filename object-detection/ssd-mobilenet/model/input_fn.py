@@ -53,14 +53,16 @@ def input_fn(is_training, image_dir, label_dir, args):
     if is_training:
         dataset = tf.data.Dataset().batch(args.batch_size).from_generator(
                         td.train_generator,
-                        (tf.float32, tf.float32)
-                  ).prefetch(1)
+                        (tf.float32, tf.float32),
+                        (tf.TensorShape([None, 160, 160, 3]), tf.TensorShape([None, 8540, 7]))
+                  )
 
     else:
         dataset = tf.data.Dataset().batch(args.batch_size).from_generator(
                         td.val_generator,
-                        (tf.float32, tf.float32)
-                   ).prefetch(1)
+                        (tf.float32, tf.float32),
+                        (tf.TensorShape([None, 160, 160, 3]), tf.TensorShape([None, 8540, 7]))
+                   )
 
 
     # Create reinitializable iterator from dataset
