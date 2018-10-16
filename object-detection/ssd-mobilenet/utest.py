@@ -6,6 +6,7 @@ import traceback
 import cv2
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 from model.ssdmobilenet import SSDMobileNet
 from model.utils import Params
@@ -196,11 +197,42 @@ def test_data_gen():
     data = 'dataset/cone/train_dev'
     images_dir = os.path.join(data, 'Images')
     labels_dir = os.path.join(data, 'Labels')
-    td = TrainingData(images_dir, labels_dir, None)
-    for i, sample in enumerate(td.train_generator(params.batch_size)):
+    td = TrainingData(images_dir, labels_dir, params)
+    for i, sample in enumerate(td.train_generator()):
         if i+1 < params.batch_size: # last batch is exception
             assert len(sample[0]) == params.batch_size, "Expected batch did not match"
             assert len(sample[1]) == params.batch_size, "Expected batch did not match"
+
+def test_dataset_API_with_pygenerator():
+    data = 'dataset/cone/train_dev'
+    image_dir = os.path.join(data, 'Images')
+    label_dir = os.path.join(data, 'Labels')
+    train_inputs = input_fn(True, image_dir, label_dir, params)
+    eval_inputs = input_fn(False, image_dir, label_dir, params)
+
+    with tf.Session() as sess:
+        sess.run(train_inputs['iterator_init_op'])
+        images = sess.run(train_inputs['images'])
+        labels = sess.run(train_inputs['labels'])
+
+        # for img in images:
+        #     plt.imshow(img)
+        #     plt.show()
+
+        # check for training data
+        assert images.shape == (params.batch_size, 160, 160, 3), "Unextected training batch image dimension"
+        assert labels.shape == (params.batch_size, 8540, 7), "Unextected training label batch dimension"
+
+        sess.run(eval_inputs['iterator_init_op'])
+        images = sess.run(eval_inputs['images'])
+        labels = sess.run(eval_inputs['labels'])
+
+        # Check for validation data
+        assert images.shape == (params.batch_size, 160, 160, 3), "Unextected val batch image dimension"
+        assert labels.shape == (params.batch_size, 8540, 7), "Unextected val label batch dimension"
+
+
+
 
 if __name__ == "__main__":
     print("#####################################################################")
@@ -217,3 +249,5 @@ if __name__ == "__main__":
         test_frame(test_ssd_optimizer)
     test_frame(test_ssd_label_create)
     test_frame(test_data_gen)
+    test_frame(test_dataset_API_with_pygenerator)
+
