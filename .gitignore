@@ -12,7 +12,6 @@ test/*
 **/SSD-keras
 **/SSD.TensorFlo
 **/ssd_mobilenet
-**/
 **/pascal.ipynb
 **/ssd-tensorflow
 **/tensorflow-eager-tutorials
