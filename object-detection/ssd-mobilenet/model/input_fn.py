@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 
-from model.ssd_preprocessing import preprocess_image
+from model.data_gen import TrainingData
 
 
 def _parse_function(filename, label):
@@ -42,32 +42,25 @@ def train_preprocess(image, label):
     return image, label
 
 
-def input_fn(is_training, filenames, labels, args):
+def input_fn(is_training, image_dir, label_dir, args):
     """Input functions for the Cones dataset."""
-
-    num_samples = len(filenames)
-    assert len(filenames) > 0, 'Datapoint not found'
 
     parse_fn = lambda f, gt: _parse_function(f, gt)
     train_fn = lambda f, gt: train_preprocess(f, gt)
 
-    train_preprocess_fn = lambda image, gt: _preprocess(image, gt, True)
-    eval_preprocess_fn = lambda image, gt: _preprocess(image, gt, False)
+    td = TrainingData(image_dir, label_dir, args)
 
     if is_training:
-        dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
-            .shuffle(num_samples)
-            .map(parse_fn, num_parallel_calls=4)
-            .map(train_fn, num_parallel_calls=4)
-            .batch(args.batch_size)
-            .prefetch(1)
-        )
+        dataset = tf.data.Dataset().batch(args.batch_size).from_generator(
+                        td.train_generator,
+                        (tf.float32, tf.float32)
+                  ).prefetch(1)
+
     else:
-        dataset = (tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
-               .map(parse_fn)
-               .batch(args.batch_size)
-               .prefetch(1)
-        )
+        dataset = tf.data.Dataset().batch(args.batch_size).from_generator(
+                        td.val_generator,
+                        (tf.float32, tf.float32)
+                   ).prefetch(1)
 
 
     # Create reinitializable iterator from dataset

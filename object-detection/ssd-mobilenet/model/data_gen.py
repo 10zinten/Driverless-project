@@ -292,7 +292,7 @@ def build_val_transforms(preset, num_classes):
 
 class TrainingData:
 
-    def __init__(self, image_dir, label_dir, param):
+    def __init__(self, image_dir, label_dir, params):
         train_filenames, train_label = get_filenames_and_labels(image_dir, label_dir, 'train')
         nones = [None] * len(train_filenames)
         train_samples = list(zip(train_filenames, nones, train_label))
@@ -300,6 +300,7 @@ class TrainingData:
         nones = [None] * len(val_filenames)
         val_samples = list(zip(val_filenames, nones, val_label))
 
+        self.params = params
         self.preset = preset = get_preset_by_name('ssdmobilenet160')
         self.num_classes = 2
         self.train_tfs = build_train_transforms(self.preset, self.num_classes)
@@ -333,17 +334,17 @@ class TrainingData:
             return images, labels
 
 
-        def gen_batch(batch_size):
+        def gen_batch():
             all_samples = copy(all_samples_)
             random.shuffle(all_samples)
 
-            for offset in range(0, len(all_samples), batch_size):
-                samples = all_samples[offset: offset + batch_size]
+            for offset in range(0, len(all_samples), params.batch_size):
+                samples = all_samples[offset: offset + params.batch_size]
                 images, labels = process_samples(samples)
 
-                # for transform in transforms:
-                #     print("[INFO] {} applied ... ok".format(transform))
-                # print()
+                for transform in transforms:
+                    print("[INFO] {} applied ... ok".format(transform))
+                print()
 
                 yield images, labels
 
