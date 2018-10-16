@@ -10,12 +10,13 @@ test/*
 **/MobileNet.ipynb
 **/MobileNet
 **/SSD-keras
-**/SSD.TensorFlo
+**/SSD.TensorFlow
 **/ssd_mobilenet
 **/pascal.ipynb
 **/ssd-tensorflow
 **/tensorflow-eager-tutorials
 
+**/eager
 **/sloth
 **/*.zip
 **/dataset
